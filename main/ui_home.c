@@ -9,6 +9,7 @@
 
 /* 外置字库尚未烧录时，使用内置常用中文字体降级显示。 */
 extern const lv_font_t lv_font_source_han_sans_sc_16_cjk;
+extern const lv_font_t lv_font_home_12;
 
 static const lv_font_t *ui_font(void)
 {
@@ -50,7 +51,7 @@ static lv_obj_t *make_icon(lv_obj_t *parent, const home_app_t *app)
     /* 手机式图标单元：仅保留图标本身，名称独立放在下方。 */
     lv_obj_t *btn = lv_button_create(parent);
     /* 240px 屏幕扣除主页内边距后仍需容纳三列。 */
-    lv_obj_set_size(btn, 60, 92);
+    lv_obj_set_size(btn, 60, 86);
     lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(btn, 0, 0);
@@ -78,16 +79,15 @@ static lv_obj_t *make_icon(lv_obj_t *parent, const home_app_t *app)
 
     lv_obj_t *name = lv_label_create(btn);
     lv_label_set_text(name, app->name);
-    lv_obj_set_width(name, LV_PCT(100));
-    lv_obj_set_style_text_font(name, ui_font(), 0);
-    /* 当前中文字库为 16px，按 75% 视觉缩放为约 12px，避免桌面标签过大。 */
-    lv_obj_set_style_transform_scale(name, 192, 0);
-    lv_obj_set_style_transform_pivot_x(name, 30, 0);
-    lv_obj_set_style_transform_pivot_y(name, 8, 0);
+    /* 主页标签采用原生 12px 点阵字体，不进行缩放，保证笔画清晰。 */
+    lv_obj_set_width(name, 60);
+    lv_obj_set_height(name, 16);
+    lv_label_set_long_mode(name, LV_LABEL_LONG_MODE_CLIP);
+    lv_obj_set_style_text_font(name, &lv_font_home_12, 0);
     lv_obj_set_style_text_align(name, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_color(name, lv_color_hex(0x263238), 0);
     lv_obj_add_flag(name, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_obj_align(name, LV_ALIGN_TOP_MID, 0, 66);
+    lv_obj_align(name, LV_ALIGN_TOP_MID, 0, 65);
     return btn;
 }
 
@@ -146,7 +146,7 @@ void ui_home_show(void)
     lv_obj_set_style_border_width(grid, 0, 0);
     lv_obj_set_style_shadow_width(grid, 0, 0);
     lv_obj_set_style_pad_all(grid, 4, 0);
-    lv_obj_set_style_pad_row(grid, 16, 0);
+    lv_obj_set_style_pad_row(grid, 12, 0);
     lv_obj_set_style_pad_column(grid, 10, 0);
     lv_obj_set_scroll_dir(grid, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(grid, LV_SCROLLBAR_MODE_OFF);

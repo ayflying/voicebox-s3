@@ -3,6 +3,7 @@ idf_component_register(
         "app_main.c"
         "font_mgr.c"
         "lv_font_utf8_zh_16.c"
+        "lv_font_home_12.c"
         "wifi_mgr.c"
         "tts.c"
         "ota_client.c"

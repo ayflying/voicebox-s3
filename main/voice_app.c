@@ -155,10 +155,23 @@ static void on_released(lv_event_t *e)
     s_recording = false;
     lv_label_set_text(g_status_label, "识别中...");
 
-    /* 拷贝录音缓冲（避免被后续覆盖） */
+    /* 录音任务可能尚未写入首帧，空缓冲时不能解引用 s_rec_buf。 */
     size_t n = s_rec_len;
-    uint8_t *pcm = malloc(n ? n : 1);
-    if (n) memcpy(pcm, s_rec_buf, n);
+    if (n == 0 || s_rec_buf == NULL) {
+        lv_label_set_text(g_text_label, "录音时间太短");
+        lv_label_set_text(g_status_label, "按住说话");
+        return;
+    }
+
+    /* 拷贝录音缓冲（避免被后续覆盖）。 */
+    uint8_t *pcm = malloc(n);
+    if (pcm == NULL) {
+        ESP_LOGE(TAG, "alloc %u bytes for recording failed", (unsigned)n);
+        lv_label_set_text(g_text_label, "内存不足，请重试");
+        lv_label_set_text(g_status_label, "按住说话");
+        return;
+    }
+    memcpy(pcm, s_rec_buf, n);
 
     char *txt = (n > 1000) ? transcribe(pcm, n) : NULL;  /* 太短忽略 */
     free(pcm);
