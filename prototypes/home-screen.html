@@ -3,7 +3,7 @@
     <header class="statusbar">
       <time id="clock">10:24</time>
       <div class="status" aria-label="设备状态">
-        <button class="status-button" id="wifiButton" type="button" title="切换 WiFi 状态" aria-label="WiFi 未连接"><span class="wifi-icon" id="wifiIcon">⌁</span></button>
+        <button class="status-button" id="wifiButton" type="button" title="切换 WiFi 状态" aria-label="WiFi 未连接"><span class="wifi-icon" id="wifiIcon"><i></i><b></b><em></em><strong></strong></span></button>
         <button class="status-button power-button" id="powerButton" type="button" title="切换电源状态" aria-label="使用电池供电"><span class="power-icon" id="powerIcon"></span></button>
         <span class="battery-wrap" aria-label="当前电量"><span class="battery-icon"><i id="batteryFill"></i></span><span id="batteryText">78%</span></span>
       </div>
@@ -24,6 +24,7 @@
       <label>图标间距 <input id="gapSize" type="range" min="12" max="28" value="20"><output id="gapSizeOut">20 px</output></label>
     </div>
     <div class="legend"><span><i class="dot blue"></i>常用功能</span><span><i class="dot violet"></i>设备控制</span><span><i class="dot coral"></i>设置</span></div>
+    <p class="status-note">状态栏说明：左侧是时间；右侧依次为 WiFi 信号、水波图标颜色表示联网状态、插头表示外接电源/充电状态，以及电池电量百分比。</p>
   </aside>
 </main>
 
@@ -38,7 +39,10 @@
   #clock { font-variant-numeric:tabular-nums; font-size:16px; letter-spacing:.01em; color:#1d2940; }
   .status { display:flex; align-items:center; gap:10px; color:#59657a; }
   .status-button { display:flex; align-items:center; gap:4px; padding:3px 0; border:0; background:transparent; color:inherit; font:inherit; font-size:10px; cursor:pointer; }
-  .wifi-icon { width:16px; height:16px; display:grid; place-items:center; color:#9aa5b7; font-size:22px; font-weight:400; line-height:1; transform:rotate(-20deg); }
+  /* 标准 WiFi 水波图标：三道同心弧 + 中心信号点。 */
+  .wifi-icon { position:relative; width:18px; height:15px; display:block; color:#9aa5b7; overflow:hidden; }
+  .wifi-icon i,.wifi-icon b,.wifi-icon em { position:absolute; left:50%; border:1.7px solid currentColor; border-bottom:0; border-radius:50% 50% 0 0; transform:translateX(-50%); font-style:normal; }
+  .wifi-icon i { top:0; width:18px; height:10px; }.wifi-icon b { top:3px; width:12px; height:7px; }.wifi-icon em { top:6px; width:6px; height:4px; }.wifi-icon strong { position:absolute; bottom:0; left:50%; width:3px; height:3px; border-radius:50%; background:currentColor; transform:translateX(-50%); }
   .status-button.is-online .wifi-icon { color:var(--blue); }
   /* 电源图标：插头表示外接电源；闪电表示正在充电；无插头表示电池供电。 */
   .power-button { width:16px; height:18px; justify-content:center; }.power-icon { position:relative; width:10px; height:12px; border:1.5px solid #9aa5b7; border-top:0; border-radius:0 0 3px 3px; }.power-icon::before { content:""; position:absolute; top:-4px; left:1px; width:2px; height:4px; border-radius:1px; background:#9aa5b7; box-shadow:5px 0 #9aa5b7; }.power-icon::after { content:""; position:absolute; left:3px; top:3px; width:3px; height:5px; background:#9aa5b7; clip-path:polygon(55% 0,100% 0,58% 44%,88% 44%,0 100%,35% 56%,8% 56%); }.status-button.is-charging .power-icon { border-color:var(--amber); }.status-button.is-charging .power-icon::before,.status-button.is-charging .power-icon::after { background:var(--amber); box-shadow:5px 0 var(--amber); }
@@ -51,7 +55,7 @@
   footer { padding-top:28px; text-align:center; color:#a3abba; font-size:10px; }
   .panel { width:min(360px,100%); } .eyebrow { margin:0 0 10px; color:var(--blue); font:700 11px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.1em; } .panel h2 { margin:0 0 14px; font-size:28px; letter-spacing:-.04em; }.panel>p:not(.eyebrow) { margin:0; color:var(--muted); line-height:1.7; font-size:14px; }
   .controls { margin-top:28px; padding:18px; border:1px solid var(--line); border-radius:16px; background:#fff; }.controls label { display:grid; grid-template-columns:80px 1fr 48px; align-items:center; gap:10px; margin:11px 0; color:#536077; font-size:12px; }.controls input { accent-color:var(--blue); }.controls output { color:#1d2940; font-variant-numeric:tabular-nums; }
-  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:17px; color:var(--muted); font-size:11px; }.dot { width:8px; height:8px; display:inline-block; border-radius:50%; margin-right:5px; }.blue{background:var(--blue)}.violet{background:var(--violet)}.coral{background:var(--coral)}
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:17px; color:var(--muted); font-size:11px; }.dot { width:8px; height:8px; display:inline-block; border-radius:50%; margin-right:5px; }.blue{background:var(--blue)}.violet{background:var(--violet)}.coral{background:var(--coral)}.status-note{margin-top:20px;color:var(--muted);font-size:11px;line-height:1.7;}
   @media(max-width:760px){ .page{align-items:flex-start; flex-direction:column; gap:30px; padding:28px 20px;}.phone{width:300px;height:400px;padding:22px 25px 28px;align-self:center}.panel{width:100%;} }
 </style>
 
