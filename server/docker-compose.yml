@@ -12,11 +12,9 @@
 
 services:
   gateway:
-    # 本机构建 Wyoming 适配网关，镜像名按部署约定使用 voicebox-s3:latest。
-    build:
-      context: ./gateway
-    image: voicebox-s3:latest
-    pull_policy: never
+    # 已发布的网关镜像：由 GHCR 拉取，不在部署机本地构建。
+    image: ghcr.io/ayflying/voicebox-s3:latest
+    pull_policy: always
     ports:
       - "18080:18080"
     environment:
