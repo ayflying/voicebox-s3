@@ -29,9 +29,10 @@ services:
     restart: unless-stopped
 
   asr:
-    # 采用现成 Faster-Whisper HTTP 镜像，不再自行构建/推送 ASR。
-    image: hwdsl2/whisper-server:latest
-    pull_policy: always
+    # 固定为已验证的镜像摘要，避免 compose pull 因 latest 重新拉取 ASR 镜像。
+    # 升级 ASR 时需显式更新该摘要并完成转写回归验证。
+    image: hwdsl2/whisper-server@sha256:166a8c04e2687608a116372e92f11bfda3e963f3c1dbf390a7c820db0f45887b
+    pull_policy: missing
     environment:
       - WHISPER_MODEL=${WHISPER_MODEL:-base}
       - WHISPER_LANGUAGE=zh
