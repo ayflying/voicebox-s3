@@ -414,7 +414,8 @@ void system_app_open(void)
     if (!g_ota_update_available) lv_obj_add_flag(g_ver_reddot, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_event_cb(update, on_ver_open, LV_EVENT_CLICKED, NULL);
 
-    lv_obj_t *info = settings_row(list, LV_SYMBOL_INFO, 0xf36d67, "设备信息", "VoiceBox S3");
+    /* 当前 LVGL 符号表没有 LV_SYMBOL_INFO，使用与 H5 一致的 i 标识。 */
+    lv_obj_t *info = settings_row(list, "i", 0xf36d67, "设备信息", "VoiceBox S3");
     lv_obj_add_event_cb(info, on_info_open, LV_EVENT_CLICKED, NULL);
 
     lv_screen_load(scr);
