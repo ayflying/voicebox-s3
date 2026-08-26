@@ -1,14 +1,13 @@
 <main class="page">
   <section class="phone" aria-label="VoiceBox S3 主界面原型">
     <header class="statusbar">
-      <div class="brand"><span class="brand-dot"></span>VoiceBox S3</div>
-      <div class="status"><span class="wifi">⌁</span><span>10:24</span><span class="battery">▰</span></div>
+      <time id="clock">10:24</time>
+      <div class="status" aria-label="设备状态">
+        <button class="status-button" id="wifiButton" type="button" title="切换 WiFi 状态" aria-label="WiFi 未连接"><span class="wifi-icon" id="wifiIcon">⌁</span><span id="wifiText">未连接</span></button>
+        <button class="status-button" id="powerButton" type="button" title="切换电源状态" aria-label="使用电池供电"><span class="power-icon" id="powerIcon">▱</span></button>
+        <span class="battery-wrap" aria-label="当前电量"><span class="battery-icon"><i id="batteryFill"></i></span><span id="batteryText">78%</span></span>
+      </div>
     </header>
-
-    <section class="welcome">
-      <p>早上好</p>
-      <h1>今天想做什么？</h1>
-    </section>
 
     <section class="app-grid" id="appGrid" aria-label="应用列表"></section>
     <footer>向上滑动查看更多应用</footer>
@@ -33,11 +32,16 @@
   /* 按设备逻辑分辨率 240×320 等比绘制，再放大展示，避免图标与间距失真。 */
   .phone { width:432px; height:576px; overflow-y:auto; scrollbar-width:none; padding:32px 36px 40px; border:1px solid #e3e7f0; border-radius:38px; background:var(--surface); box-shadow:0 24px 60px rgba(24,39,75,.13); }
   .phone::-webkit-scrollbar { display:none; }
-  .statusbar { height:24px; display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:700; letter-spacing:.02em; }
-  .brand { display:flex; align-items:center; gap:6px; color:#465169; } .brand-dot { width:7px; height:7px; border-radius:50%; background:var(--blue); box-shadow:0 0 0 3px #e7efff; }
-  .status { display:flex; align-items:center; gap:7px; color:#59657a; } .wifi { font-size:18px; transform:rotate(-20deg); line-height:1; } .battery { font-size:16px; color:#3b4659; }
-  .welcome { padding:32px 0 26px; } .welcome p { margin:0 0 7px; font-size:12px; color:var(--muted); } .welcome h1 { margin:0; font-size:22px; letter-spacing:-.04em; }
-  .app-grid { --icon-size:54px; --grid-gap:20px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-auto-rows:92px; column-gap:var(--grid-gap); row-gap:22px; }
+  .statusbar { height:34px; display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:700; letter-spacing:.02em; border-bottom:1px solid var(--line); }
+  #clock { font-variant-numeric:tabular-nums; font-size:16px; letter-spacing:.01em; color:#1d2940; }
+  .status { display:flex; align-items:center; gap:10px; color:#59657a; }
+  .status-button { display:flex; align-items:center; gap:4px; padding:3px 0; border:0; background:transparent; color:inherit; font:inherit; font-size:10px; cursor:pointer; }
+  .wifi-icon { width:15px; height:15px; display:grid; place-items:center; color:#9aa5b7; font-size:21px; font-weight:400; line-height:1; transform:rotate(-20deg); }
+  .status-button.is-online .wifi-icon { color:var(--blue); }.status-button.is-online #wifiText { color:#3d7cff; }
+  .power-icon { font-size:18px; color:#7a8494; line-height:1; }.status-button.is-charging .power-icon { color:var(--amber); }
+  .battery-wrap { display:flex; align-items:center; gap:4px; color:#455168; font-size:10px; font-variant-numeric:tabular-nums; }
+  .battery-icon { position:relative; width:20px; height:10px; padding:1px; border:1.5px solid #59657a; border-radius:3px; }.battery-icon::after { content:""; position:absolute; top:2px; right:-4px; width:2px; height:4px; border-radius:0 2px 2px 0; background:#59657a; }.battery-icon i { display:block; width:78%; height:100%; border-radius:1px; background:#3d7cff; transition:width .2s ease,background .2s ease; }
+  .app-grid { --icon-size:54px; --grid-gap:20px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-auto-rows:92px; column-gap:var(--grid-gap); row-gap:22px; padding-top:28px; }
   .app { height:92px; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:9px; border:0; background:transparent; color:var(--ink); font:inherit; padding:0; cursor:pointer; }
   .app:active .icon { transform:scale(.92); } .icon { width:var(--icon-size); aspect-ratio:1 / 1; height:auto; flex:0 0 auto; border-radius:18px; display:grid; place-items:center; color:white; font-size:27px; font-family:Arial,sans-serif; font-weight:600; box-shadow:0 6px 14px rgba(30,48,90,.13); transition:transform .15s ease; }
   .app-name { font-size:11px; line-height:1.2; white-space:nowrap; color:#38445a; }
@@ -65,4 +69,17 @@
   const bind = (input, output, variable, suffix=' px') => { const update=()=>{ grid.style.setProperty(variable, input.value+suffix); output.textContent=input.value+suffix; }; input.addEventListener('input',update); update(); };
   bind(document.querySelector('#iconSize'),document.querySelector('#iconSizeOut'),'--icon-size');
   bind(document.querySelector('#gapSize'),document.querySelector('#gapSizeOut'),'--grid-gap');
+
+  const clock = document.querySelector('#clock');
+  const updateClock = () => { const now = new Date(); clock.textContent = now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false}); };
+  updateClock(); setInterval(updateClock, 30000);
+
+  const wifiButton = document.querySelector('#wifiButton');
+  const wifiText = document.querySelector('#wifiText');
+  let online = false;
+  wifiButton.onclick = () => { online = !online; wifiButton.classList.toggle('is-online', online); wifiText.textContent = online ? '已连接' : '未连接'; wifiButton.setAttribute('aria-label', `WiFi ${wifiText.textContent}`); };
+
+  const powerButton = document.querySelector('#powerButton');
+  let charging = false;
+  powerButton.onclick = () => { charging = !charging; powerButton.classList.toggle('is-charging', charging); document.querySelector('#powerIcon').textContent = charging ? 'ϟ' : '▱'; powerButton.setAttribute('aria-label', charging ? '外接电源充电中' : '使用电池供电'); };
 </script>
