@@ -1,0 +1,4 @@
+dependencies:
+  espressif/esp-box-3: ">=2.5.0"
+  espressif/esp-sr: ">=2.4.0"
+  idf: ">=5.3"

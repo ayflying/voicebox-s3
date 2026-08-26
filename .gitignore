@@ -1,0 +1,30 @@
+# ESP-IDF build outputs and generated configuration
+build/
+managed_components/
+dependencies.lock
+sdkconfig
+sdkconfig.old
+sdkconfig.*
+!sdkconfig.defaults
+
+# Firmware build artifacts
+*.elf
+*.map
+*.bin
+*.uf2
+*.hex
+outputs/
+
+# Tooling and local environment
+.vscode/
+.idea/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*.log
+.env
+.env.*
+!.env.example
+
+# WorkBuddy project-local runtime data
+.workbuddy/

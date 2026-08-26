@@ -1,0 +1,54 @@
+# ESP32 语音对讲 —— 服务端编排
+# 两容器：
+#   gateway : GoFrame 鉴权网关，暴露 18080（设备 + 管理员接口都在这里）
+#   asr     : Faster-Whisper 纯 CPU 转写，【不映射主机端口】，仅网关内网可达
+#
+# 固件(OTA) 经 gateway 的 /api/ota/* 分发，落地在命名卷 ota_storage，容器重建不丢。
+#
+# 镜像：由 GitHub Container Registry（GHCR）提供。
+# 启动：在部署服务器进入本目录后执行：
+#   AUTH_TOKEN=设备令牌 ADMIN_TOKEN=管理员令牌 docker compose pull && docker compose up -d
+# 端口/令牌也可写入同目录 .env 文件。公开镜像无需 docker login。
+
+services:
+  gateway:
+    image: ghcr.io/ayflying/voicebox-s3-gateway:latest
+    pull_policy: always
+    ports:
+      - "18080:18080"
+    environment:
+      - GATEWAY_PORT=18080
+      - AUTH_TOKEN=${AUTH_TOKEN:-changeme-device-token}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-changeme-admin-token}
+      - UPSTREAM_ASR=http://asr:9000
+      - FIRMWARE_DIR=/firmware
+    volumes:
+      - ota_storage:/firmware
+    depends_on:
+      - asr
+    restart: unless-stopped
+
+  asr:
+    # 采用现成 Faster-Whisper HTTP 镜像，不再自行构建/推送 ASR。
+    image: hwdsl2/whisper-server:latest
+    pull_policy: always
+    environment:
+      - WHISPER_MODEL=${WHISPER_MODEL:-base}
+      - WHISPER_LANGUAGE=zh
+      - WHISPER_DEVICE=cpu
+      - WHISPER_COMPUTE_TYPE=int8
+      - WHISPER_THREADS=${WHISPER_THREADS:-4}
+    volumes:
+      # 首次下载的模型持久化，后续容器重建不重复下载。
+      - whisper_models:/var/lib/whisper
+    # 注意：此处【不写 ports】，Whisper 只对同 compose 网络的 gateway 暴露 9000
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 4G
+
+volumes:
+  ota_storage:
+  whisper_models:

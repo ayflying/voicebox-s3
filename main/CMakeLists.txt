@@ -1,0 +1,27 @@
+idf_component_register(
+    SRCS
+        "app_main.c"
+        "font_mgr.c"
+        "lv_font_utf8_zh_16.c"
+        "wifi_mgr.c"
+        "tts.c"
+        "ota_client.c"
+        "ui_home.c"
+        "system_app.c"
+        "voice_app.c"
+    INCLUDE_DIRS "."
+    REQUIRES
+        driver
+        esp_wifi
+        nvs_flash
+        esp_http_client
+        esp-tls
+        esp-sr
+        esp32_s3_es3c28p
+        esp_lvgl_port
+        lvgl
+        esp_codec_dev
+        cjson
+        app_update
+        esp_partition
+)
