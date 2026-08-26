@@ -303,18 +303,15 @@ func pushHandler(r *ghttp.Request) {
 		r.Response.WriteStatusExit(http.StatusBadRequest, g.Map{"error": "missing file field"})
 		return
 	}
-	saved, err := upfile.Save(os.TempDir(), false)
+	// 直接读取 multipart 上传流，不依赖框架 Save 返回的临时文件路径。
+	// 此前 Save 可能只返回文件名，导致网关在错误目录读取并返回 500。
+	src, err := upfile.Open()
 	if err != nil {
 		r.Response.WriteStatusExit(http.StatusInternalServerError, g.Map{"error": err.Error()})
 		return
 	}
-	// Save 返回的可能只是文件名；上传文件实际落在传入的临时目录中。
-	savedPath := saved
-	if !filepath.IsAbs(savedPath) {
-		savedPath = filepath.Join(os.TempDir(), savedPath)
-	}
-	defer os.Remove(savedPath)
-	data, err := os.ReadFile(savedPath)
+	defer src.Close()
+	data, err := io.ReadAll(src)
 	if err != nil {
 		r.Response.WriteStatusExit(http.StatusInternalServerError, g.Map{"error": err.Error()})
 		return
