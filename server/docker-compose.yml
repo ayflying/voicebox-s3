@@ -31,9 +31,9 @@ services:
     restart: unless-stopped
 
   asr:
-    # LinuxServer Faster-Whisper：固定已验证 digest，不使用 latest，避免无谓重拉。
+    # LinuxServer Faster-Whisper：使用明确版本标签，不使用 latest。
     # 服务使用 Wyoming TCP 协议，仅在 Compose 内网开放 10300。
-    image: lscr.io/linuxserver/faster-whisper@sha256:9c0d993fd31a3db8ef83002a114cec9e43c6348dc7098770540444ff0cc562b1
+    image: lscr.io/linuxserver/faster-whisper:amd64-v3.5.0-ls150
     pull_policy: missing
     environment:
       - PUID=0
