@@ -316,10 +316,12 @@ void system_app_open(void)
     set_cn_font(scr);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xffffff), 0);
     lv_obj_set_style_pad_all(scr, 0, 0);
+    lv_obj_set_layout(scr, LV_LAYOUT_NONE);
     lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t *status = lv_obj_create(scr);
     lv_obj_set_size(status, LV_PCT(100), 20);
+    lv_obj_set_pos(status, 0, 0);
     lv_obj_set_style_bg_opa(status, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(status, 0, 0);
     lv_obj_set_style_pad_hor(status, 12, 0);
@@ -347,6 +349,7 @@ void system_app_open(void)
 
     lv_obj_t *nav = lv_obj_create(scr);
     lv_obj_set_size(nav, LV_PCT(100), 34);
+    lv_obj_set_pos(nav, 0, 20);
     lv_obj_set_style_bg_opa(nav, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(nav, 0, 0);
     lv_obj_set_style_pad_hor(nav, 12, 0);
@@ -354,7 +357,7 @@ void system_app_open(void)
     lv_obj_clear_flag(nav, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t *back = lv_button_create(nav);
-    lv_obj_set_size(back, 52, 28);
+    lv_obj_set_size(back, 32, 28);
     lv_obj_set_style_bg_opa(back, LV_OPA_TRANSP, 0);
     lv_obj_set_style_bg_color(back, lv_color_hex(0xf0f3f8), LV_STATE_PRESSED);
     lv_obj_set_style_border_width(back, 0, 0);
@@ -362,14 +365,17 @@ void system_app_open(void)
     lv_obj_set_style_pad_all(back, 0, 0);
     lv_obj_align(back, LV_ALIGN_LEFT_MID, 0, 0);
     lv_obj_t *back_label = lv_label_create(back);
-    lv_label_set_text(back_label, LV_SYMBOL_LEFT " 返回");
-    set_cn_font(back_label);
+    lv_label_set_text(back_label, LV_SYMBOL_LEFT);
+    lv_obj_set_style_text_font(back_label, LV_FONT_DEFAULT, 0);
     lv_obj_set_style_text_color(back_label, lv_color_hex(0x526078), 0);
     lv_obj_center(back_label);
+    /* 标签接管触点时将点击事件冒泡给按钮，确保纯图标区域也能返回。 */
+    lv_obj_add_flag(back_label, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_add_event_cb(back, on_back_click, LV_EVENT_CLICKED, NULL);
 
     lv_obj_t *content = lv_obj_create(scr);
     lv_obj_set_size(content, LV_PCT(100), 266);
+    lv_obj_set_pos(content, 0, 54);
     lv_obj_set_style_bg_opa(content, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(content, 0, 0);
     lv_obj_set_style_pad_hor(content, 12, 0);
