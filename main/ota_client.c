@@ -56,8 +56,9 @@ void net_cfg_get_url(char *buf, size_t len)
 
 void net_cfg_get_token(char *buf, size_t len)
 {
-    nvs_get(NVS_NS_NET, NVS_KEY_TOKEN, buf, len);
-    if (buf[0] == '\0') strncpy(buf, DEFAULT_AUTH_TOKEN, len - 1);
+    if (!buf || len == 0) return;
+    /* 设备令牌与固定网关配套使用，忽略历史 NVS 中遗留的占位令牌。 */
+    strlcpy(buf, DEFAULT_AUTH_TOKEN, len);
 }
 
 void net_cfg_set(const char *url, const char *token)
