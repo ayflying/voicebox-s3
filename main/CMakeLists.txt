@@ -8,6 +8,7 @@ idf_component_register(
         "tts.c"
         "ota_client.c"
         "ui_home.c"
+        "ui_chrome.c"
         "system_app.c"
         "voice_app.c"
     INCLUDE_DIRS "."

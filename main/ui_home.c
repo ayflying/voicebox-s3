@@ -2,6 +2,7 @@
 #include "esp32_voice.h"
 #include "wifi_mgr.h"
 #include "system_app.h"
+#include "ui_chrome.h"
 #include "voice_app.h"
 #include "font_mgr.h"
 
@@ -99,46 +100,13 @@ void ui_home_show(void)
         return;
     }
 
-    g_screen = lv_obj_create(NULL);
-    lv_obj_set_style_text_font(g_screen, ui_font(), 0);
-    lv_obj_set_flex_flow(g_screen, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_all(g_screen, 16, 0);
-
-    /* 紧凑固定状态栏：左侧时钟占位，右侧仅显示 WiFi 图标与电量状态。 */
-    lv_obj_t *bar = lv_obj_create(g_screen);
-    lv_obj_set_width(bar, LV_PCT(100));
-    lv_obj_set_height(bar, 24);
-    lv_obj_set_style_bg_opa(bar, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(bar, 0, 0);
-    lv_obj_set_style_pad_all(bar, 0, 0);
-    lv_obj_clear_flag(bar, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t *clock = lv_label_create(bar);
-    lv_label_set_text(clock, "--:--");
-    lv_obj_set_style_text_font(clock, ui_font(), 0);
-    lv_obj_align(clock, LV_ALIGN_LEFT_MID, 0, 0);
-
-    g_battery_label = lv_label_create(bar);
-    lv_label_set_text(g_battery_label, LV_SYMBOL_BATTERY_EMPTY " --%");
-    lv_obj_set_style_text_font(g_battery_label, LV_FONT_DEFAULT, 0);
-    lv_obj_align(g_battery_label, LV_ALIGN_RIGHT_MID, 0, 0);
-
-    g_wifi_label = lv_label_create(bar);
-    lv_label_set_text(g_wifi_label, LV_SYMBOL_WIFI);
-    lv_obj_set_style_text_font(g_wifi_label, LV_FONT_DEFAULT, 0);
-    lv_obj_align_to(g_wifi_label, g_battery_label, LV_ALIGN_OUT_LEFT_MID, -10, 0);
-
-    g_wifi_dot = lv_obj_create(bar);
-    lv_obj_set_size(g_wifi_dot, 5, 5);
-    lv_obj_set_style_radius(g_wifi_dot, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_border_width(g_wifi_dot, 0, 0);
-    lv_obj_align_to(g_wifi_dot, g_wifi_label, LV_ALIGN_OUT_LEFT_MID, -4, 0);
-
-    /* 手机式无底卡九宫格：状态栏固定，仅图标区纵向滚动。 */
+    g_screen = ui_chrome_screen_create();
+    ui_chrome_add_status(g_screen);
+    /* 主页没有返回按钮，但同样使用公共状态栏，内容从 y=20 开始。 */
     lv_obj_t *grid = lv_obj_create(g_screen);
+    lv_obj_set_size(grid, LV_PCT(100), 320 - UI_STATUS_BAR_HEIGHT);
+    lv_obj_set_pos(grid, 0, UI_STATUS_BAR_HEIGHT);
     /* 列式父容器下必须显式占满可用宽度，否则网格会按内容收缩为单列。 */
-    lv_obj_set_width(grid, LV_PCT(100));
-    lv_obj_set_flex_grow(grid, 1);
     /* 三列固定格宽：避免内容宽度导致入口退化为纵向单列。 */
     lv_obj_set_flex_flow(grid, LV_FLEX_FLOW_ROW_WRAP);
     lv_obj_set_flex_align(grid, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);

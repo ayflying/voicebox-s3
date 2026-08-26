@@ -3,6 +3,7 @@
 #include "tts.h"
 #include "ota_client.h"
 #include "ui_home.h"
+#include "ui_chrome.h"
 #include "voice_app.h"
 #include "font_mgr.h"
 
@@ -104,6 +105,8 @@ void app_main(void)
     /* 桌面：LVGL 由独立任务驱动，应用任务创建控件前必须持有 BSP 锁。 */
     if (bsp_display_lock(0)) {
         ui_home_show();
+        /* 全页面共用状态栏：联网后同步中国标准时间，并每秒刷新显示。 */
+        ui_chrome_time_sync_start();
         bsp_display_unlock();
     } else {
         ESP_LOGE(TAG, "failed to acquire LVGL lock for home screen");

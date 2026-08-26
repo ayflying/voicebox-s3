@@ -3,6 +3,7 @@
 #include "wifi_mgr.h"
 #include "ota_client.h"
 #include "ui_home.h"
+#include "ui_chrome.h"
 #include "font_mgr.h"
 
 #include "lvgl.h"
@@ -30,8 +31,8 @@ static void set_cn_font(lv_obj_t *obj)
         font ? font : &lv_font_source_han_sans_sc_16_cjk, 0);
 }
 
-/* 带返回栏的新界面；返回按钮回到桌面并刷新红点 */
-static lv_obj_t *new_screen(const char *title)
+/* 所有设置子页共用状态栏与纯图标返回导航；内容从 y=54 开始。 */
+static lv_obj_t *new_screen(const char *title, lv_obj_t **content_out)
 {
     /* 键盘属于旧屏幕；切屏后重新按需创建，避免保留失效对象指针。 */
     g_kb = NULL;
@@ -40,29 +41,12 @@ static lv_obj_t *new_screen(const char *title)
         lv_timer_delete(g_scan_poll_timer);
         g_scan_poll_timer = NULL;
     }
-    lv_obj_t *scr = lv_obj_create(NULL);
-    set_cn_font(scr);
-    lv_obj_set_flex_flow(scr, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_all(scr, 12, 0);
-
-    lv_obj_t *top = lv_obj_create(scr);
-    lv_obj_set_width(top, LV_PCT(100));
-    lv_obj_set_height(top, 44);
-    lv_obj_clear_flag(top, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t *back = lv_button_create(top);
-    lv_obj_set_size(back, 60, 32);
-    lv_obj_align(back, LV_ALIGN_LEFT_MID, 4, 0);
-    lv_obj_t *bl = lv_label_create(back);
-    lv_label_set_text(bl, "返回");
-    set_cn_font(bl);
-    lv_obj_center(bl);
-    lv_obj_add_event_cb(back, on_back_click, LV_EVENT_CLICKED, NULL);
-
-    lv_obj_t *t = lv_label_create(top);
-    lv_label_set_text(t, title);
-    set_cn_font(t);
-    lv_obj_align(t, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_t *scr = ui_chrome_screen_create();
+    ui_chrome_add_status(scr);
+    ui_chrome_add_nav(scr, title, on_back_click);
+    *content_out = ui_chrome_add_content(scr, 12, 8);
+    lv_obj_set_flex_flow(*content_out, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_row(*content_out, 8, 0);
     return scr;
 }
 
@@ -97,28 +81,29 @@ static void on_update_click(lv_event_t *e)
 
 static void version_screen(void)
 {
-    lv_obj_t *scr = new_screen("版本信息");
+    lv_obj_t *content;
+    lv_obj_t *scr = new_screen("版本信息", &content);
 
     char ver[32];
     ota_get_running_version(ver, sizeof(ver));
-    lv_obj_t *cur = lv_label_create(scr);
+    lv_obj_t *cur = lv_label_create(content);
     lv_label_set_text_fmt(cur, "当前版本: %s", ver);
 
     if (g_ota_update_available) {
-        lv_obj_t *latest = lv_label_create(scr);
+        lv_obj_t *latest = lv_label_create(content);
         lv_label_set_text_fmt(latest, "待更新版本: %s", g_ota_latest_version);
 
-        lv_obj_t *desc = lv_label_create(scr);
+        lv_obj_t *desc = lv_label_create(content);
         lv_label_set_text_fmt(desc, "更新说明:\n%s", g_ota_latest_desc);
 
-        lv_obj_t *upd = lv_button_create(scr);
+        lv_obj_t *upd = lv_button_create(content);
         lv_obj_set_size(upd, LV_PCT(100), 48);
         lv_obj_t *ul = lv_label_create(upd);
         lv_label_set_text(ul, "更新版本");
         lv_obj_center(ul);
         lv_obj_add_event_cb(upd, on_update_click, LV_EVENT_CLICKED, NULL);
     } else {
-        lv_obj_t *latest = lv_label_create(scr);
+        lv_obj_t *latest = lv_label_create(content);
         lv_label_set_text(latest, "已是最新版本");
     }
     lv_screen_load(scr);
@@ -213,16 +198,17 @@ static void on_scan_click(lv_event_t *e)
 
 static void wifi_screen(void)
 {
-    lv_obj_t *scr = new_screen("WiFi");
+    lv_obj_t *content;
+    lv_obj_t *scr = new_screen("WiFi", &content);
 
-    lv_obj_t *scan = lv_button_create(scr);
+    lv_obj_t *scan = lv_button_create(content);
     lv_obj_set_size(scan, LV_PCT(100), 40);
     lv_obj_t *sl = lv_label_create(scan);
     lv_label_set_text(sl, "扫描网络");
     lv_obj_center(sl);
     lv_obj_add_event_cb(scan, on_scan_click, LV_EVENT_CLICKED, NULL);
 
-    g_wifi_list = lv_obj_create(scr);
+    g_wifi_list = lv_obj_create(content);
     lv_obj_set_flex_grow(g_wifi_list, 1);
     lv_obj_set_flex_flow(g_wifi_list, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_width(g_wifi_list, LV_PCT(100));
@@ -290,13 +276,14 @@ static lv_obj_t *settings_row(lv_obj_t *parent, const char *icon, uint32_t color
 
 static void device_info_screen(void)
 {
-    lv_obj_t *scr = new_screen("设备信息");
-    lv_obj_t *name = lv_label_create(scr);
+    lv_obj_t *content;
+    lv_obj_t *scr = new_screen("设备信息", &content);
+    lv_obj_t *name = lv_label_create(content);
     lv_label_set_text(name, "VoiceBox S3");
     set_cn_font(name);
-    lv_obj_t *model = lv_label_create(scr);
+    lv_obj_t *model = lv_label_create(content);
     lv_label_set_text(model, "ESP32-S3 ES3C28P");
-    lv_obj_t *ip = lv_label_create(scr);
+    lv_obj_t *ip = lv_label_create(content);
     const char *device_ip = wifi_mgr_ip();
     if (wifi_mgr_state() == WIFI_ST_CONNECTED && device_ip && device_ip[0]) {
         lv_label_set_text_fmt(ip, "设备 IP: %s", device_ip);
@@ -311,86 +298,15 @@ static void on_info_open(lv_event_t *e) { (void)e; device_info_screen(); }
 
 void system_app_open(void)
 {
-    /* 240×320 屏按通用页面结构布局：状态栏 + 可见返回栏 + 内容区。 */
-    lv_obj_t *scr = lv_obj_create(NULL);
-    set_cn_font(scr);
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0xffffff), 0);
-    lv_obj_set_style_pad_all(scr, 0, 0);
-    lv_obj_set_layout(scr, LV_LAYOUT_NONE);
-    lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t *status = lv_obj_create(scr);
-    lv_obj_set_size(status, LV_PCT(100), 20);
-    lv_obj_set_pos(status, 0, 0);
-    lv_obj_set_style_bg_opa(status, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(status, 0, 0);
-    lv_obj_set_style_pad_hor(status, 12, 0);
-    lv_obj_set_style_pad_ver(status, 0, 0);
-    lv_obj_clear_flag(status, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t *clock = lv_label_create(status);
-    lv_label_set_text(clock, "--:--");
-    lv_obj_set_style_text_font(clock, LV_FONT_DEFAULT, 0);
-    lv_obj_set_style_text_color(clock, lv_color_hex(0x59657a), 0);
-    lv_obj_align(clock, LV_ALIGN_LEFT_MID, 0, 0);
-
-    lv_obj_t *battery = lv_label_create(status);
-    lv_label_set_text(battery, LV_SYMBOL_BATTERY_FULL " 78%");
-    lv_obj_set_style_text_font(battery, LV_FONT_DEFAULT, 0);
-    lv_obj_set_style_text_color(battery, lv_color_hex(0x59657a), 0);
-    lv_obj_align(battery, LV_ALIGN_RIGHT_MID, 0, 0);
-
-    lv_obj_t *wifi_icon = lv_label_create(status);
-    lv_label_set_text(wifi_icon, LV_SYMBOL_WIFI);
-    lv_obj_set_style_text_font(wifi_icon, LV_FONT_DEFAULT, 0);
-    lv_obj_set_style_text_color(wifi_icon,
-        wifi_mgr_state() == WIFI_ST_CONNECTED ? lv_color_hex(0x3d7cff) : lv_color_hex(0x9aa5b7), 0);
-    lv_obj_align_to(wifi_icon, battery, LV_ALIGN_OUT_LEFT_MID, -5, 0);
-
-    lv_obj_t *nav = lv_obj_create(scr);
-    lv_obj_set_size(nav, LV_PCT(100), 34);
-    lv_obj_set_pos(nav, 0, 20);
-    lv_obj_set_style_bg_opa(nav, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(nav, 0, 0);
-    lv_obj_set_style_pad_hor(nav, 12, 0);
-    lv_obj_set_style_pad_ver(nav, 0, 0);
-    lv_obj_clear_flag(nav, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t *back = lv_button_create(nav);
-    lv_obj_set_size(back, 32, 28);
-    lv_obj_set_style_bg_opa(back, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_bg_color(back, lv_color_hex(0xf0f3f8), LV_STATE_PRESSED);
-    lv_obj_set_style_border_width(back, 0, 0);
-    lv_obj_set_style_shadow_width(back, 0, 0);
-    lv_obj_set_style_pad_all(back, 0, 0);
-    lv_obj_align(back, LV_ALIGN_LEFT_MID, 0, 0);
-    lv_obj_t *back_label = lv_label_create(back);
-    lv_label_set_text(back_label, LV_SYMBOL_LEFT);
-    lv_obj_set_style_text_font(back_label, LV_FONT_DEFAULT, 0);
-    lv_obj_set_style_text_color(back_label, lv_color_hex(0x526078), 0);
-    lv_obj_center(back_label);
-    /* 标签接管触点时将点击事件冒泡给按钮，确保纯图标区域也能返回。 */
-    lv_obj_add_flag(back_label, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_obj_add_event_cb(back, on_back_click, LV_EVENT_CLICKED, NULL);
-
-    lv_obj_t *content = lv_obj_create(scr);
-    lv_obj_set_size(content, LV_PCT(100), 266);
-    lv_obj_set_pos(content, 0, 54);
-    lv_obj_set_style_bg_opa(content, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(content, 0, 0);
-    lv_obj_set_style_pad_hor(content, 12, 0);
-    lv_obj_set_style_pad_ver(content, 0, 0);
-    lv_obj_clear_flag(content, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t *title = lv_label_create(content);
-    lv_label_set_text(title, "系统设置");
-    set_cn_font(title);
-    lv_obj_set_style_text_color(title, lv_color_hex(0x172033), 0);
-    lv_obj_align(title, LV_ALIGN_TOP_LEFT, 0, 10);
+    /* 系统设置也是普通页面：公共状态栏在最上方，标题放在公共导航栏，不再与时间或返回按钮竞争空间。 */
+    lv_obj_t *scr = ui_chrome_screen_create();
+    ui_chrome_add_status(scr);
+    ui_chrome_add_nav(scr, "系统设置", on_back_click);
+    lv_obj_t *content = ui_chrome_add_content(scr, 12, 0);
 
     lv_obj_t *list = lv_obj_create(content);
     lv_obj_set_size(list, LV_PCT(100), 187);
-    lv_obj_align(list, LV_ALIGN_TOP_LEFT, 0, 52);
+    lv_obj_align(list, LV_ALIGN_TOP_LEFT, 0, 12);
     lv_obj_set_flex_flow(list, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_bg_opa(list, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(list, 0, 0);

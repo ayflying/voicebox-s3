@@ -2,6 +2,7 @@
 #include "esp32_voice.h"
 #include "tts.h"
 #include "ui_home.h"
+#include "ui_chrome.h"
 #include "font_mgr.h"
 
 #include <string.h>
@@ -188,40 +189,34 @@ static void on_released(lv_event_t *e)
     free(txt);
 }
 
+static void on_back_click(lv_event_t *e)
+{
+    (void)e;
+    ui_home_show();
+}
+
 void voice_app_open(void)
 {
-    lv_obj_t *scr = lv_obj_create(NULL);
-    set_utf8_font(scr);
-    lv_obj_set_flex_flow(scr, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_all(scr, 16, 0);
+    lv_obj_t *scr = ui_chrome_screen_create();
+    ui_chrome_add_status(scr);
+    ui_chrome_add_nav(scr, "语音助手", on_back_click);
+    lv_obj_t *content = ui_chrome_add_content(scr, 16, 0);
 
-    lv_obj_t *top = lv_obj_create(scr);
-    lv_obj_set_width(top, LV_PCT(100));
-    lv_obj_set_height(top, 44);
-    lv_obj_clear_flag(top, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_t *back = lv_button_create(top);
-    lv_obj_set_size(back, 60, 32);
-    lv_obj_align(back, LV_ALIGN_LEFT_MID, 4, 0);
-    lv_obj_t *bl = lv_label_create(back);
-    lv_label_set_text(bl, "返回");
-    set_utf8_font(bl);
-    lv_obj_center(bl);
-    lv_obj_add_event_cb(back, (lv_event_cb_t)ui_home_show, LV_EVENT_CLICKED, NULL);
-
-    g_text_label = lv_label_create(scr);
+    g_text_label = lv_label_create(content);
     lv_label_set_text(g_text_label, "（识别结果会显示在这里）");
     set_utf8_font(g_text_label);
-    lv_obj_set_flex_grow(g_text_label, 1);
+    lv_obj_set_width(g_text_label, LV_PCT(100));
     lv_obj_set_style_text_align(g_text_label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_align(g_text_label, LV_ALIGN_TOP_MID, 0, 26);
 
-    g_status_label = lv_label_create(scr);
+    g_status_label = lv_label_create(content);
     lv_label_set_text(g_status_label, "按住说话");
     set_utf8_font(g_status_label);
-    lv_obj_align(g_status_label, LV_ALIGN_BOTTOM_MID, 0, -90);
+    lv_obj_align(g_status_label, LV_ALIGN_BOTTOM_MID, 0, -92);
 
-    lv_obj_t *mic = lv_button_create(scr);
+    lv_obj_t *mic = lv_button_create(content);
     lv_obj_set_size(mic, 160, 160);
-    lv_obj_align(mic, LV_ALIGN_BOTTOM_MID, 0, -10);
+    lv_obj_align(mic, LV_ALIGN_BOTTOM_MID, 0, -12);
     lv_obj_set_style_radius(mic, 80, 0);
     lv_obj_set_style_bg_color(mic, lv_color_hex(0x38a169), 0);
     lv_obj_t *ml = lv_label_create(mic);
