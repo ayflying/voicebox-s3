@@ -112,8 +112,8 @@ void app_main(void)
     /* 启动后执行一次不触碰 UI 的 WiFi 扫描实机自检。 */
     xTaskCreate(wifi_scan_selftest_task, "wifi_scan_test", 4096, NULL, 3, NULL);
 
-    /* 后台查 OTA 版本（驱动红点） */
-    xTaskCreate(ota_check_task, "ota_check", 4096, NULL, 3, NULL);
+    /* HTTPS/TLS 证书校验占用较多栈空间，使用 8K words 防止 OTA 自检任务栈溢出重启。 */
+    xTaskCreate(ota_check_task, "ota_check", 8192, NULL, 3, NULL);
 
     ESP_LOGI(TAG, "app started, version %s", APP_VERSION);
 }
