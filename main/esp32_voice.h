@@ -19,7 +19,7 @@
 
 /* 固定公网网关：不从 NVS 读取，也不向用户提供修改入口。 */
 #define DEFAULT_GATEWAY_URL "https://esp.luoe.cn"
-#define DEFAULT_AUTH_TOKEN  "123456"
+#define DEFAULT_AUTH_TOKEN  "fb6435a2346f5ec0fd36b660b81b513eda56ddb0833829173636fd283dad2827"
 
 /* OTA 分发接口路径（挂在网关 18080 下） */
 #define OTA_VERSION_PATH   "/api/ota/version"
