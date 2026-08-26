@@ -26,4 +26,5 @@ idf_component_register(
         cjson
         app_update
         esp_partition
+        efuse
 )
