@@ -80,6 +80,10 @@ static lv_obj_t *make_icon(lv_obj_t *parent, const home_app_t *app)
     lv_label_set_text(name, app->name);
     lv_obj_set_width(name, LV_PCT(100));
     lv_obj_set_style_text_font(name, ui_font(), 0);
+    /* 当前中文字库为 16px，按 75% 视觉缩放为约 12px，避免桌面标签过大。 */
+    lv_obj_set_style_transform_scale(name, 192, 0);
+    lv_obj_set_style_transform_pivot_x(name, 30, 0);
+    lv_obj_set_style_transform_pivot_y(name, 8, 0);
     lv_obj_set_style_text_align(name, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_color(name, lv_color_hex(0x263238), 0);
     lv_obj_add_flag(name, LV_OBJ_FLAG_EVENT_BUBBLE);
@@ -132,10 +136,12 @@ void ui_home_show(void)
 
     /* 手机式无底卡九宫格：状态栏固定，仅图标区纵向滚动。 */
     lv_obj_t *grid = lv_obj_create(g_screen);
+    /* 列式父容器下必须显式占满可用宽度，否则网格会按内容收缩为单列。 */
+    lv_obj_set_width(grid, LV_PCT(100));
     lv_obj_set_flex_grow(grid, 1);
     /* 三列固定格宽：避免内容宽度导致入口退化为纵向单列。 */
     lv_obj_set_flex_flow(grid, LV_FLEX_FLOW_ROW_WRAP);
-    lv_obj_set_flex_align(grid, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_flex_align(grid, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
     lv_obj_set_style_bg_opa(grid, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(grid, 0, 0);
     lv_obj_set_style_shadow_width(grid, 0, 0);
