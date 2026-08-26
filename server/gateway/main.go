@@ -46,13 +46,14 @@ func main() {
 	s.SetPort(listenPort)
 	s.SetServerRoot("")
 
-	// 设备接口（需 X-Auth-Token）
+	// ASR 设备接口仍需 X-Auth-Token。OTA 分发先以免认证方式联调，
+	// 后续可按设备 UUID 恢复专用鉴权，不复用可轮换的全局令牌。
 	s.Group("/", func(group *ghttp.RouterGroup) {
 		group.Middleware(authMiddleware)
 		group.POST("/transcribe", transcribeHandler)
-		group.GET("/api/ota/version", versionHandler)
-		group.GET("/api/ota/firmware", firmwareHandler)
 	})
+	s.GET("/api/ota/version", versionHandler)
+	s.GET("/api/ota/firmware", firmwareHandler)
 
 	// 管理员接口（需 X-Admin-Token，独立令牌）
 	s.Group("/api/admin", func(group *ghttp.RouterGroup) {
