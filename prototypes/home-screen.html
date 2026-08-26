@@ -1,0 +1,67 @@
+<main class="page">
+  <section class="phone" aria-label="VoiceBox S3 主界面原型">
+    <header class="statusbar">
+      <div class="brand"><span class="brand-dot"></span>VoiceBox S3</div>
+      <div class="status"><span class="wifi">⌁</span><span>10:24</span><span class="battery">▰</span></div>
+    </header>
+
+    <section class="welcome">
+      <p>早上好</p>
+      <h1>今天想做什么？</h1>
+    </section>
+
+    <section class="app-grid" id="appGrid" aria-label="应用列表"></section>
+    <footer>向上滑动查看更多应用</footer>
+  </section>
+
+  <aside class="panel">
+    <p class="eyebrow">INTERACTIVE PROTOTYPE</p>
+    <h2>手机式九宫格主页</h2>
+    <p>先在这里确认图标、颜色、间距和文字层级，确认后再同步到 ESP32。</p>
+    <div class="controls">
+      <label>图标尺寸 <input id="iconSize" type="range" min="44" max="68" value="54"><output id="iconSizeOut">54 px</output></label>
+      <label>图标间距 <input id="gapSize" type="range" min="12" max="28" value="20"><output id="gapSizeOut">20 px</output></label>
+    </div>
+    <div class="legend"><span><i class="dot blue"></i>常用功能</span><span><i class="dot violet"></i>设备控制</span><span><i class="dot coral"></i>设置</span></div>
+  </aside>
+</main>
+
+<style>
+  :root { --ink:#172033; --muted:#6e7788; --line:#e9edf4; --surface:#ffffff; --canvas:#f7f8fc; --blue:#3d7cff; --violet:#7453e9; --coral:#f36d67; --teal:#2fa99d; --amber:#efaa44; }
+  * { box-sizing:border-box; } body { margin:0; min-height:100vh; background:var(--canvas); color:var(--ink); font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif; }
+  .page { min-height:100vh; display:flex; align-items:center; justify-content:center; gap:64px; padding:44px 28px; }
+  .phone { width:300px; height:600px; overflow-y:auto; scrollbar-width:none; padding:18px 20px 22px; border:1px solid #e3e7f0; border-radius:36px; background:var(--surface); box-shadow:0 24px 60px rgba(24,39,75,.13); }
+  .phone::-webkit-scrollbar { display:none; }
+  .statusbar { height:24px; display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:700; letter-spacing:.02em; }
+  .brand { display:flex; align-items:center; gap:6px; color:#465169; } .brand-dot { width:7px; height:7px; border-radius:50%; background:var(--blue); box-shadow:0 0 0 3px #e7efff; }
+  .status { display:flex; align-items:center; gap:7px; color:#59657a; } .wifi { font-size:18px; transform:rotate(-20deg); line-height:1; } .battery { font-size:16px; color:#3b4659; }
+  .welcome { padding:32px 0 26px; } .welcome p { margin:0 0 7px; font-size:12px; color:var(--muted); } .welcome h1 { margin:0; font-size:22px; letter-spacing:-.04em; }
+  .app-grid { --icon-size:54px; --grid-gap:20px; display:grid; grid-template-columns:repeat(3,1fr); column-gap:var(--grid-gap); row-gap:22px; }
+  .app { min-height:92px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:9px; border:0; background:transparent; color:var(--ink); font:inherit; padding:0; cursor:pointer; }
+  .app:active .icon { transform:scale(.92); } .icon { width:var(--icon-size); height:var(--icon-size); border-radius:18px; display:grid; place-items:center; color:white; font-size:27px; font-family:Arial,sans-serif; font-weight:600; box-shadow:0 6px 14px rgba(30,48,90,.13); transition:transform .15s ease; }
+  .app-name { font-size:11px; line-height:1.2; white-space:nowrap; color:#38445a; }
+  footer { padding-top:28px; text-align:center; color:#a3abba; font-size:10px; }
+  .panel { width:min(360px,100%); } .eyebrow { margin:0 0 10px; color:var(--blue); font:700 11px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.1em; } .panel h2 { margin:0 0 14px; font-size:28px; letter-spacing:-.04em; }.panel>p:not(.eyebrow) { margin:0; color:var(--muted); line-height:1.7; font-size:14px; }
+  .controls { margin-top:28px; padding:18px; border:1px solid var(--line); border-radius:16px; background:#fff; }.controls label { display:grid; grid-template-columns:80px 1fr 48px; align-items:center; gap:10px; margin:11px 0; color:#536077; font-size:12px; }.controls input { accent-color:var(--blue); }.controls output { color:#1d2940; font-variant-numeric:tabular-nums; }
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:17px; color:var(--muted); font-size:11px; }.dot { width:8px; height:8px; display:inline-block; border-radius:50%; margin-right:5px; }.blue{background:var(--blue)}.violet{background:var(--violet)}.coral{background:var(--coral)}
+  @media(max-width:760px){ .page{align-items:flex-start; flex-direction:column; gap:30px; padding:28px 20px;}.phone{align-self:center}.panel{width:100%;} }
+</style>
+
+<script>
+  const apps = [
+    ['语音助手', '♬', '#3d7cff'], ['系统设置', '⚙', '#f36d67'], ['网络连接', '⌁', '#2fa99d'],
+    ['设备信息', 'i', '#7453e9'], ['软件更新', '↥', '#efaa44'], ['音量控制', '♪', '#3d7cff'],
+    ['录音管理', '●', '#7453e9'], ['使用帮助', '?', '#2fa99d'], ['关于设备', '⌘', '#f36d67'],
+    ['更多功能', '＋', '#6e7788'], ['测试入口', '✓', '#3d7cff'], ['开发工具', '‹›', '#7453e9']
+  ];
+  const grid = document.querySelector('#appGrid');
+  apps.forEach(([name, symbol, color]) => {
+    const item = document.createElement('button'); item.className='app'; item.setAttribute('aria-label',name);
+    item.innerHTML = `<span class="icon" style="background:${color}">${symbol}</span><span class="app-name">${name}</span>`;
+    item.onclick = () => item.querySelector('.icon').animate([{transform:'scale(1)'},{transform:'scale(.9)'},{transform:'scale(1)'}],{duration:180});
+    grid.append(item);
+  });
+  const bind = (input, output, variable, suffix=' px') => { const update=()=>{ grid.style.setProperty(variable, input.value+suffix); output.textContent=input.value+suffix; }; input.addEventListener('input',update); update(); };
+  bind(document.querySelector('#iconSize'),document.querySelector('#iconSizeOut'),'--icon-size');
+  bind(document.querySelector('#gapSize'),document.querySelector('#gapSizeOut'),'--grid-gap');
+</script>
