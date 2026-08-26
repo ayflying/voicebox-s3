@@ -240,7 +240,8 @@ static lv_obj_t *settings_row(lv_obj_t *parent, const char *icon, uint32_t color
                               const char *title, const char *detail)
 {
     lv_obj_t *row = lv_button_create(parent);
-    lv_obj_set_size(row, LV_PCT(100), 42);
+    /* 中文字体为 16px，单行必须保留足够高度，避免标题与摘要相互覆盖。 */
+    lv_obj_set_size(row, LV_PCT(100), 62);
     lv_obj_set_style_bg_color(row, lv_color_hex(0xffffff), 0);
     lv_obj_set_style_bg_color(row, lv_color_hex(0xf7f9fd), LV_STATE_PRESSED);
     lv_obj_set_style_border_width(row, 1, 0);
@@ -252,10 +253,10 @@ static lv_obj_t *settings_row(lv_obj_t *parent, const char *icon, uint32_t color
     lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t *badge = lv_obj_create(row);
-    lv_obj_set_size(badge, 19, 19);
+    lv_obj_set_size(badge, 28, 28);
     lv_obj_set_style_bg_color(badge, lv_color_hex(color), 0);
     lv_obj_set_style_border_width(badge, 0, 0);
-    lv_obj_set_style_radius(badge, 6, 0);
+    lv_obj_set_style_radius(badge, 9, 0);
     lv_obj_clear_flag(badge, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(badge, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_align(badge, LV_ALIGN_LEFT_MID, 0, 0);
@@ -271,13 +272,13 @@ static lv_obj_t *settings_row(lv_obj_t *parent, const char *icon, uint32_t color
     lv_label_set_text(title_label, title);
     set_cn_font(title_label);
     lv_obj_set_style_text_color(title_label, lv_color_hex(0x172033), 0);
-    lv_obj_align(title_label, LV_ALIGN_TOP_LEFT, 28, 5);
+    lv_obj_align(title_label, LV_ALIGN_TOP_LEFT, 38, 8);
 
     lv_obj_t *detail_label = lv_label_create(row);
     lv_label_set_text(detail_label, detail);
     set_cn_font(detail_label);
     lv_obj_set_style_text_color(detail_label, lv_color_hex(0x8b95a5), 0);
-    lv_obj_align(detail_label, LV_ALIGN_BOTTOM_LEFT, 28, -5);
+    lv_obj_align(detail_label, LV_ALIGN_BOTTOM_LEFT, 38, -7);
 
     lv_obj_t *arrow = lv_label_create(row);
     lv_label_set_text(arrow, LV_SYMBOL_RIGHT);
@@ -310,59 +311,80 @@ static void on_info_open(lv_event_t *e) { (void)e; device_info_screen(); }
 
 void system_app_open(void)
 {
-    /* 主设置页以 H5 为唯一视觉标准：白底、顶部返回、状态信息与分隔式列表。 */
+    /* 240×320 屏按通用页面结构布局：状态栏 + 可见返回栏 + 内容区。 */
     lv_obj_t *scr = lv_obj_create(NULL);
     set_cn_font(scr);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xffffff), 0);
-    lv_obj_set_style_pad_hor(scr, 11, 0);
-    lv_obj_set_style_pad_ver(scr, 4, 0);
-    lv_obj_set_flex_flow(scr, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(scr, 0, 0);
+    lv_obj_set_style_pad_all(scr, 0, 0);
+    lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t *bar = lv_obj_create(scr);
-    lv_obj_set_width(bar, LV_PCT(100));
-    lv_obj_set_height(bar, 18);
-    lv_obj_set_style_bg_opa(bar, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(bar, 0, 0);
-    lv_obj_set_style_pad_all(bar, 0, 0);
-    lv_obj_clear_flag(bar, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_t *status = lv_obj_create(scr);
+    lv_obj_set_size(status, LV_PCT(100), 20);
+    lv_obj_set_style_bg_opa(status, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(status, 0, 0);
+    lv_obj_set_style_pad_hor(status, 12, 0);
+    lv_obj_set_style_pad_ver(status, 0, 0);
+    lv_obj_clear_flag(status, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t *back = lv_label_create(bar);
-    lv_label_set_text(back, LV_SYMBOL_LEFT);
-    lv_obj_set_style_text_font(back, LV_FONT_DEFAULT, 0);
-    lv_obj_set_style_text_color(back, lv_color_hex(0x526078), 0);
-    lv_obj_add_flag(back, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_add_event_cb(back, on_back_click, LV_EVENT_CLICKED, NULL);
-    lv_obj_align(back, LV_ALIGN_LEFT_MID, 0, 0);
-
-    lv_obj_t *clock = lv_label_create(bar);
+    lv_obj_t *clock = lv_label_create(status);
     lv_label_set_text(clock, "--:--");
     lv_obj_set_style_text_font(clock, LV_FONT_DEFAULT, 0);
     lv_obj_set_style_text_color(clock, lv_color_hex(0x59657a), 0);
-    lv_obj_align(clock, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_align(clock, LV_ALIGN_LEFT_MID, 0, 0);
 
-    lv_obj_t *battery = lv_label_create(bar);
+    lv_obj_t *battery = lv_label_create(status);
     lv_label_set_text(battery, LV_SYMBOL_BATTERY_FULL " 78%");
     lv_obj_set_style_text_font(battery, LV_FONT_DEFAULT, 0);
     lv_obj_set_style_text_color(battery, lv_color_hex(0x59657a), 0);
     lv_obj_align(battery, LV_ALIGN_RIGHT_MID, 0, 0);
 
-    lv_obj_t *wifi_icon = lv_label_create(bar);
+    lv_obj_t *wifi_icon = lv_label_create(status);
     lv_label_set_text(wifi_icon, LV_SYMBOL_WIFI);
     lv_obj_set_style_text_font(wifi_icon, LV_FONT_DEFAULT, 0);
     lv_obj_set_style_text_color(wifi_icon,
         wifi_mgr_state() == WIFI_ST_CONNECTED ? lv_color_hex(0x3d7cff) : lv_color_hex(0x9aa5b7), 0);
     lv_obj_align_to(wifi_icon, battery, LV_ALIGN_OUT_LEFT_MID, -5, 0);
 
-    lv_obj_t *title = lv_label_create(scr);
+    lv_obj_t *nav = lv_obj_create(scr);
+    lv_obj_set_size(nav, LV_PCT(100), 34);
+    lv_obj_set_style_bg_opa(nav, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(nav, 0, 0);
+    lv_obj_set_style_pad_hor(nav, 12, 0);
+    lv_obj_set_style_pad_ver(nav, 0, 0);
+    lv_obj_clear_flag(nav, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *back = lv_button_create(nav);
+    lv_obj_set_size(back, 52, 28);
+    lv_obj_set_style_bg_opa(back, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_bg_color(back, lv_color_hex(0xf0f3f8), LV_STATE_PRESSED);
+    lv_obj_set_style_border_width(back, 0, 0);
+    lv_obj_set_style_shadow_width(back, 0, 0);
+    lv_obj_set_style_pad_all(back, 0, 0);
+    lv_obj_align(back, LV_ALIGN_LEFT_MID, 0, 0);
+    lv_obj_t *back_label = lv_label_create(back);
+    lv_label_set_text(back_label, LV_SYMBOL_LEFT " 返回");
+    set_cn_font(back_label);
+    lv_obj_set_style_text_color(back_label, lv_color_hex(0x526078), 0);
+    lv_obj_center(back_label);
+    lv_obj_add_event_cb(back, on_back_click, LV_EVENT_CLICKED, NULL);
+
+    lv_obj_t *content = lv_obj_create(scr);
+    lv_obj_set_size(content, LV_PCT(100), 266);
+    lv_obj_set_style_bg_opa(content, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(content, 0, 0);
+    lv_obj_set_style_pad_hor(content, 12, 0);
+    lv_obj_set_style_pad_ver(content, 0, 0);
+    lv_obj_clear_flag(content, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *title = lv_label_create(content);
     lv_label_set_text(title, "系统设置");
     set_cn_font(title);
     lv_obj_set_style_text_color(title, lv_color_hex(0x172033), 0);
-    lv_obj_set_style_pad_top(title, 12, 0);
-    lv_obj_set_style_pad_bottom(title, 8, 0);
+    lv_obj_align(title, LV_ALIGN_TOP_LEFT, 0, 10);
 
-    lv_obj_t *list = lv_obj_create(scr);
-    lv_obj_set_width(list, LV_PCT(100));
+    lv_obj_t *list = lv_obj_create(content);
+    lv_obj_set_size(list, LV_PCT(100), 187);
+    lv_obj_align(list, LV_ALIGN_TOP_LEFT, 0, 52);
     lv_obj_set_flex_flow(list, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_bg_opa(list, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(list, 0, 0);
