@@ -11,7 +11,6 @@
 
     <div class="home-scroll">
       <section class="app-grid" id="appGrid" aria-label="应用列表"></section>
-      <footer>向上滑动查看更多应用</footer>
     </div>
   </section>
 
@@ -33,11 +32,11 @@
   * { box-sizing:border-box; } body { margin:0; min-height:100vh; background:var(--canvas); color:var(--ink); font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif; }
   .page { min-height:100vh; display:flex; align-items:center; justify-content:center; gap:64px; padding:44px 28px; }
   /* 按设备逻辑分辨率 240×320 等比绘制，再放大展示，避免图标与间距失真。 */
-  .phone { width:432px; height:576px; display:flex; flex-direction:column; overflow:hidden; padding:32px 36px 40px; border:1px solid #e3e7f0; border-radius:38px; background:var(--surface); box-shadow:0 24px 60px rgba(24,39,75,.13); }
-  .statusbar { position:relative; z-index:1; flex:0 0 34px; height:34px; display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:700; letter-spacing:.02em; border-bottom:1px solid var(--line); background:var(--surface); }
+  .phone { width:432px; height:576px; display:flex; flex-direction:column; overflow:hidden; padding:8px 20px 20px; border:1px solid #e3e7f0; border-radius:38px; background:var(--surface); box-shadow:0 24px 60px rgba(24,39,75,.13); }
+  .statusbar { position:relative; z-index:1; flex:0 0 22px; height:22px; display:flex; align-items:center; justify-content:space-between; font-size:10px; font-weight:700; letter-spacing:.02em; border-bottom:0; background:var(--surface); }
   .home-scroll { flex:1; min-height:0; overflow-y:auto; scrollbar-width:none; }.home-scroll::-webkit-scrollbar { display:none; }
-  #clock { font-variant-numeric:tabular-nums; font-size:16px; letter-spacing:.01em; color:#1d2940; }
-  .status { display:flex; align-items:center; gap:10px; color:#59657a; }
+  #clock { font-variant-numeric:tabular-nums; font-size:12px; letter-spacing:.01em; color:#1d2940; }
+  .status { display:flex; align-items:center; gap:8px; color:#59657a; }
   .status-button { display:flex; align-items:center; gap:4px; padding:3px 0; border:0; background:transparent; color:inherit; font:inherit; font-size:10px; cursor:pointer; }
   /* 标准 WiFi 水波图标：三道同心弧 + 中心信号点。 */
   .wifi-icon { position:relative; width:18px; height:15px; display:block; color:#9aa5b7; overflow:hidden; }
@@ -49,29 +48,26 @@
   .battery-wrap { display:flex; align-items:center; gap:4px; color:#455168; font-size:10px; font-variant-numeric:tabular-nums; }
   .battery-icon { position:relative; width:20px; height:10px; padding:1px; border:1.5px solid #59657a; border-radius:3px; }.battery-icon::after { content:""; position:absolute; top:2px; right:-4px; width:2px; height:4px; border-radius:0 2px 2px 0; background:#59657a; }.battery-icon i { display:block; width:78%; height:100%; border-radius:1px; background:#3d7cff; transition:width .2s ease,background .2s ease; }
   /* 九宫格采用固定单元和固定图标画布，所有入口严格同尺寸、同基线。 */
-  .app-grid { --icon-size:54px; --grid-gap:20px; display:grid; grid-template-columns:repeat(3,1fr); grid-auto-rows:96px; column-gap:var(--grid-gap); row-gap:18px; padding-top:28px; }
+  .app-grid { --icon-size:54px; --grid-gap:20px; display:grid; grid-template-columns:repeat(3,1fr); grid-auto-rows:96px; column-gap:var(--grid-gap); row-gap:18px; padding-top:14px; }
   .app { width:100%; height:96px; min-width:0; display:grid; grid-template-rows:var(--icon-size) 16px; justify-items:center; align-content:start; row-gap:10px; border:0; background:transparent; color:var(--ink); font:inherit; padding:0; cursor:pointer; }
   .app:active .icon { transform:scale(.92); } .icon { width:var(--icon-size); height:var(--icon-size); aspect-ratio:1 / 1; box-sizing:border-box; flex:none; border-radius:18px; display:grid; place-items:center; color:white; font-size:27px; font-family:Arial,sans-serif; font-weight:600; line-height:1; box-shadow:0 6px 14px rgba(30,48,90,.13); transition:transform .15s ease; }.icon-symbol{display:block;width:1em;height:1em;line-height:1;text-align:center;}
   .app-name { width:100%; height:16px; overflow:hidden; text-overflow:ellipsis; text-align:center; font-size:11px; line-height:16px; white-space:nowrap; color:#38445a; }
-  footer { padding-top:28px; text-align:center; color:#a3abba; font-size:10px; }
   .panel { width:min(360px,100%); } .eyebrow { margin:0 0 10px; color:var(--blue); font:700 11px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.1em; } .panel h2 { margin:0 0 14px; font-size:28px; letter-spacing:-.04em; }.panel>p:not(.eyebrow) { margin:0; color:var(--muted); line-height:1.7; font-size:14px; }
   .controls { margin-top:28px; padding:18px; border:1px solid var(--line); border-radius:16px; background:#fff; }.controls label { display:grid; grid-template-columns:80px 1fr 48px; align-items:center; gap:10px; margin:11px 0; color:#536077; font-size:12px; }.controls input { accent-color:var(--blue); }.controls output { color:#1d2940; font-variant-numeric:tabular-nums; }
   .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:17px; color:var(--muted); font-size:11px; }.dot { width:8px; height:8px; display:inline-block; border-radius:50%; margin-right:5px; }.blue{background:var(--blue)}.violet{background:var(--violet)}.coral{background:var(--coral)}.status-note{margin-top:20px;color:var(--muted);font-size:11px;line-height:1.7;}
-  @media(max-width:760px){ .page{align-items:flex-start; flex-direction:column; gap:30px; padding:28px 20px;}.phone{width:300px;height:400px;padding:22px 25px 28px;align-self:center}.panel{width:100%;} }
+  @media(max-width:760px){ .page{align-items:flex-start; flex-direction:column; gap:30px; padding:28px 20px;}.phone{width:300px;height:400px;padding:6px 14px 14px;align-self:center}.panel{width:100%;} }
 </style>
 
 <script>
   const apps = [
-    ['语音助手', '♬', '#3d7cff'], ['系统设置', '⚙', '#f36d67'], ['网络连接', '⌁', '#2fa99d'],
-    ['设备信息', 'i', '#7453e9'], ['软件更新', '↥', '#efaa44'], ['音量控制', '♪', '#3d7cff'],
-    ['录音管理', '●', '#7453e9'], ['使用帮助', '?', '#2fa99d'], ['关于设备', '⌘', '#f36d67'],
-    ['更多功能', '＋', '#6e7788'], ['测试入口', '✓', '#3d7cff'], ['开发工具', '‹›', '#7453e9']
+    ['语音助手', '♬', '#3d7cff', 'voice-assistant.html'],
+    ['系统设置', '⚙', '#f36d67', 'system-settings.html']
   ];
   const grid = document.querySelector('#appGrid');
-  apps.forEach(([name, symbol, color]) => {
+  apps.forEach(([name, symbol, color, href]) => {
     const item = document.createElement('button'); item.className='app'; item.setAttribute('aria-label',name);
     item.innerHTML = `<span class="icon" style="background:${color}"><span class="icon-symbol">${symbol}</span></span><span class="app-name">${name}</span>`;
-    item.onclick = () => item.querySelector('.icon').animate([{transform:'scale(1)'},{transform:'scale(.9)'},{transform:'scale(1)'}],{duration:180});
+    item.onclick = () => { item.querySelector('.icon').animate([{transform:'scale(1)'},{transform:'scale(.9)'},{transform:'scale(1)'}],{duration:180}); setTimeout(() => location.href = href, 120); };
     grid.append(item);
   });
   const bind = (input, output, variable, suffix=' px') => { const update=()=>{ grid.style.setProperty(variable, input.value+suffix); output.textContent=input.value+suffix; }; input.addEventListener('input',update); update(); };
