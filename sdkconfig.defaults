@@ -30,6 +30,10 @@ CONFIG_APP_ROLLBACK_ENABLE=y
 # 看门狗
 CONFIG_ESP_TASK_WDT_TIMEOUT_S=30
 
+# FT5x06 触摸与 ES8311 共用 I2C 总线。实机 400kHz 下曾出现触摸读超时，
+# 降至 100kHz 优先保证总线稳定，避免 LVGL 输入路径因 I2C 瞬时错误重启。
+CONFIG_BSP_I2C_FAST_MODE=n
+
 # LVGL：外置 UTF-8 中文二进制字库通过 font_data 分区内存映射加载。
 # 内置思源黑体只保留为外置资源未烧录时的故障降级字体。
 CONFIG_LV_FONT_SOURCE_HAN_SANS_SC_16_CJK=y
