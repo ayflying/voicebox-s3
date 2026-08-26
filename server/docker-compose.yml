@@ -12,10 +12,10 @@
 
 services:
   gateway:
-    # 本机构建 Wyoming 适配网关；显式版本标签，避免 compose 拉取 latest。
+    # 本机构建 Wyoming 适配网关，镜像名按部署约定使用 voicebox-s3:latest。
     build:
       context: ./gateway
-    image: voicebox-s3-gateway:wyoming-v1
+    image: voicebox-s3:latest
     pull_policy: never
     ports:
       - "18080:18080"
