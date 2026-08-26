@@ -235,10 +235,61 @@ static void wifi_screen(void)
 static void on_wifi_open(lv_event_t *e)  { (void)e; wifi_screen(); }
 static void on_ver_open(lv_event_t *e)   { (void)e; version_screen(); }
 
-void system_app_open(void)
+/* H5 卡片列表样式：彩色图标块、标题/摘要、右侧箭头。 */
+static lv_obj_t *settings_row(lv_obj_t *parent, const char *icon, uint32_t color,
+                              const char *title, const char *detail)
 {
-    lv_obj_t *scr = new_screen("系统设置");
+    lv_obj_t *row = lv_button_create(parent);
+    lv_obj_set_size(row, LV_PCT(100), 56);
+    lv_obj_set_style_bg_color(row, lv_color_hex(0xffffff), 0);
+    lv_obj_set_style_bg_color(row, lv_color_hex(0xf0f3f8), LV_STATE_PRESSED);
+    lv_obj_set_style_border_width(row, 1, 0);
+    lv_obj_set_style_border_color(row, lv_color_hex(0xe9edf4), 0);
+    lv_obj_set_style_radius(row, 10, 0);
+    lv_obj_set_style_shadow_width(row, 0, 0);
+    lv_obj_set_style_pad_all(row, 0, 0);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
 
+    lv_obj_t *badge = lv_obj_create(row);
+    lv_obj_set_size(badge, 32, 32);
+    lv_obj_set_style_bg_color(badge, lv_color_hex(color), 0);
+    lv_obj_set_style_border_width(badge, 0, 0);
+    lv_obj_set_style_radius(badge, 9, 0);
+    lv_obj_clear_flag(badge, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_align(badge, LV_ALIGN_LEFT_MID, 10, 0);
+
+    lv_obj_t *il = lv_label_create(badge);
+    lv_label_set_text(il, icon);
+    lv_obj_set_style_text_color(il, lv_color_hex(0xffffff), 0);
+    lv_obj_center(il);
+
+    lv_obj_t *title_label = lv_label_create(row);
+    lv_label_set_text(title_label, title);
+    set_cn_font(title_label);
+    lv_obj_set_style_text_color(title_label, lv_color_hex(0x172033), 0);
+    lv_obj_align(title_label, LV_ALIGN_TOP_LEFT, 52, 9);
+
+    lv_obj_t *detail_label = lv_label_create(row);
+    lv_label_set_text(detail_label, detail);
+    set_cn_font(detail_label);
+    lv_obj_set_style_text_color(detail_label, lv_color_hex(0x6e7788), 0);
+    lv_obj_align(detail_label, LV_ALIGN_BOTTOM_LEFT, 52, -8);
+
+    lv_obj_t *arrow = lv_label_create(row);
+    lv_label_set_text(arrow, ">");
+    lv_obj_set_style_text_color(arrow, lv_color_hex(0xa6b0bf), 0);
+    lv_obj_align(arrow, LV_ALIGN_RIGHT_MID, -11, 0);
+    return row;
+}
+
+static void device_info_screen(void)
+{
+    lv_obj_t *scr = new_screen("设备信息");
+    lv_obj_t *name = lv_label_create(scr);
+    lv_label_set_text(name, "VoiceBox S3");
+    set_cn_font(name);
+    lv_obj_t *model = lv_label_create(scr);
+    lv_label_set_text(model, "ESP32-S3 ES3C28P");
     lv_obj_t *ip = lv_label_create(scr);
     const char *device_ip = wifi_mgr_ip();
     if (wifi_mgr_state() == WIFI_ST_CONNECTED && device_ip && device_ip[0]) {
@@ -247,27 +298,48 @@ void system_app_open(void)
         lv_label_set_text(ip, "设备 IP: 未连接 WiFi");
     }
     set_cn_font(ip);
+    lv_screen_load(scr);
+}
 
-    lv_obj_t *wifi_btn = lv_button_create(scr);
-    lv_obj_set_size(wifi_btn, LV_PCT(100), 50);
-    lv_obj_t *wl = lv_label_create(wifi_btn);
-    lv_label_set_text(wl, "WiFi");
-    lv_obj_center(wl);
-    lv_obj_add_event_cb(wifi_btn, on_wifi_open, LV_EVENT_CLICKED, NULL);
+static void on_info_open(lv_event_t *e) { (void)e; device_info_screen(); }
 
-    lv_obj_t *ver_btn = lv_button_create(scr);
-    lv_obj_set_size(ver_btn, LV_PCT(100), 50);
-    lv_obj_t *vl = lv_label_create(ver_btn);
-    lv_label_set_text(vl, "版本信息");
-    lv_obj_center(vl);
-    g_ver_reddot = lv_obj_create(ver_btn);
-    lv_obj_set_size(g_ver_reddot, 16, 16);
-    lv_obj_set_style_radius(g_ver_reddot, 8, 0);
+void system_app_open(void)
+{
+    /* 主设置页严格采用原 H5 的浅灰背景、大标题、白色卡片列表风格。 */
+    lv_obj_t *scr = lv_obj_create(NULL);
+    set_cn_font(scr);
+    lv_obj_set_style_bg_color(scr, lv_color_hex(0xf7f8fc), 0);
+    lv_obj_set_style_pad_all(scr, 14, 0);
+    lv_obj_set_flex_flow(scr, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_row(scr, 8, 0);
+
+    lv_obj_t *title = lv_label_create(scr);
+    lv_label_set_text(title, "系统设置");
+    set_cn_font(title);
+    lv_obj_set_style_text_color(title, lv_color_hex(0x172033), 0);
+    lv_obj_set_style_pad_bottom(title, 6, 0);
+
+    const char *wifi_detail = "未连接";
+    const char *device_ip = wifi_mgr_ip();
+    if (wifi_mgr_state() == WIFI_ST_CONNECTED && device_ip && device_ip[0]) {
+        wifi_detail = device_ip;
+    }
+    lv_obj_t *wifi = settings_row(scr, "W", 0x3d7cff, "WiFi 网络", wifi_detail);
+    lv_obj_add_event_cb(wifi, on_wifi_open, LV_EVENT_CLICKED, NULL);
+
+    const char *update_detail = g_ota_update_available ? "发现新版本" : "当前已是最新版本";
+    lv_obj_t *update = settings_row(scr, "U", 0xefaa44, "软件更新", update_detail);
+    g_ver_reddot = lv_obj_create(update);
+    lv_obj_set_size(g_ver_reddot, 12, 12);
+    lv_obj_set_style_radius(g_ver_reddot, 6, 0);
     lv_obj_set_style_bg_color(g_ver_reddot, lv_color_hex(0xe53e3e), 0);
     lv_obj_set_style_border_width(g_ver_reddot, 0, 0);
-    lv_obj_align(g_ver_reddot, LV_ALIGN_TOP_RIGHT, -8, 8);
+    lv_obj_align(g_ver_reddot, LV_ALIGN_TOP_RIGHT, -7, 7);
     if (!g_ota_update_available) lv_obj_add_flag(g_ver_reddot, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_event_cb(ver_btn, on_ver_open, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(update, on_ver_open, LV_EVENT_CLICKED, NULL);
+
+    lv_obj_t *info = settings_row(scr, "i", 0xf36d67, "设备信息", "VoiceBox S3");
+    lv_obj_add_event_cb(info, on_info_open, LV_EVENT_CLICKED, NULL);
 
     lv_screen_load(scr);
 }
