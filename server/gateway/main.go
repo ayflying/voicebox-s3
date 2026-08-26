@@ -308,7 +308,13 @@ func pushHandler(r *ghttp.Request) {
 		r.Response.WriteStatusExit(http.StatusInternalServerError, g.Map{"error": err.Error()})
 		return
 	}
-	data, err := os.ReadFile(saved)
+	// Save 返回的可能只是文件名；上传文件实际落在传入的临时目录中。
+	savedPath := saved
+	if !filepath.IsAbs(savedPath) {
+		savedPath = filepath.Join(os.TempDir(), savedPath)
+	}
+	defer os.Remove(savedPath)
+	data, err := os.ReadFile(savedPath)
 	if err != nil {
 		r.Response.WriteStatusExit(http.StatusInternalServerError, g.Map{"error": err.Error()})
 		return
