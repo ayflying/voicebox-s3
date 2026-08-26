@@ -3,14 +3,16 @@
     <header class="statusbar">
       <time id="clock">10:24</time>
       <div class="status" aria-label="设备状态">
-        <button class="status-button" id="wifiButton" type="button" title="切换 WiFi 状态" aria-label="WiFi 未连接"><span class="wifi-icon" id="wifiIcon">⌁</span><span id="wifiText">未连接</span></button>
-        <button class="status-button" id="powerButton" type="button" title="切换电源状态" aria-label="使用电池供电"><span class="power-icon" id="powerIcon">▱</span></button>
+        <button class="status-button" id="wifiButton" type="button" title="切换 WiFi 状态" aria-label="WiFi 未连接"><span class="wifi-icon" id="wifiIcon">⌁</span></button>
+        <button class="status-button power-button" id="powerButton" type="button" title="切换电源状态" aria-label="使用电池供电"><span class="power-icon" id="powerIcon"></span></button>
         <span class="battery-wrap" aria-label="当前电量"><span class="battery-icon"><i id="batteryFill"></i></span><span id="batteryText">78%</span></span>
       </div>
     </header>
 
-    <section class="app-grid" id="appGrid" aria-label="应用列表"></section>
-    <footer>向上滑动查看更多应用</footer>
+    <div class="home-scroll">
+      <section class="app-grid" id="appGrid" aria-label="应用列表"></section>
+      <footer>向上滑动查看更多应用</footer>
+    </div>
   </section>
 
   <aside class="panel">
@@ -30,15 +32,16 @@
   * { box-sizing:border-box; } body { margin:0; min-height:100vh; background:var(--canvas); color:var(--ink); font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif; }
   .page { min-height:100vh; display:flex; align-items:center; justify-content:center; gap:64px; padding:44px 28px; }
   /* 按设备逻辑分辨率 240×320 等比绘制，再放大展示，避免图标与间距失真。 */
-  .phone { width:432px; height:576px; overflow-y:auto; scrollbar-width:none; padding:32px 36px 40px; border:1px solid #e3e7f0; border-radius:38px; background:var(--surface); box-shadow:0 24px 60px rgba(24,39,75,.13); }
-  .phone::-webkit-scrollbar { display:none; }
-  .statusbar { height:34px; display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:700; letter-spacing:.02em; border-bottom:1px solid var(--line); }
+  .phone { width:432px; height:576px; display:flex; flex-direction:column; overflow:hidden; padding:32px 36px 40px; border:1px solid #e3e7f0; border-radius:38px; background:var(--surface); box-shadow:0 24px 60px rgba(24,39,75,.13); }
+  .statusbar { position:relative; z-index:1; flex:0 0 34px; height:34px; display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:700; letter-spacing:.02em; border-bottom:1px solid var(--line); background:var(--surface); }
+  .home-scroll { flex:1; min-height:0; overflow-y:auto; scrollbar-width:none; }.home-scroll::-webkit-scrollbar { display:none; }
   #clock { font-variant-numeric:tabular-nums; font-size:16px; letter-spacing:.01em; color:#1d2940; }
   .status { display:flex; align-items:center; gap:10px; color:#59657a; }
   .status-button { display:flex; align-items:center; gap:4px; padding:3px 0; border:0; background:transparent; color:inherit; font:inherit; font-size:10px; cursor:pointer; }
-  .wifi-icon { width:15px; height:15px; display:grid; place-items:center; color:#9aa5b7; font-size:21px; font-weight:400; line-height:1; transform:rotate(-20deg); }
-  .status-button.is-online .wifi-icon { color:var(--blue); }.status-button.is-online #wifiText { color:#3d7cff; }
-  .power-icon { font-size:18px; color:#7a8494; line-height:1; }.status-button.is-charging .power-icon { color:var(--amber); }
+  .wifi-icon { width:16px; height:16px; display:grid; place-items:center; color:#9aa5b7; font-size:22px; font-weight:400; line-height:1; transform:rotate(-20deg); }
+  .status-button.is-online .wifi-icon { color:var(--blue); }
+  /* 电源图标：插头表示外接电源；闪电表示正在充电；无插头表示电池供电。 */
+  .power-button { width:16px; height:18px; justify-content:center; }.power-icon { position:relative; width:10px; height:12px; border:1.5px solid #9aa5b7; border-top:0; border-radius:0 0 3px 3px; }.power-icon::before { content:""; position:absolute; top:-4px; left:1px; width:2px; height:4px; border-radius:1px; background:#9aa5b7; box-shadow:5px 0 #9aa5b7; }.power-icon::after { content:""; position:absolute; left:3px; top:3px; width:3px; height:5px; background:#9aa5b7; clip-path:polygon(55% 0,100% 0,58% 44%,88% 44%,0 100%,35% 56%,8% 56%); }.status-button.is-charging .power-icon { border-color:var(--amber); }.status-button.is-charging .power-icon::before,.status-button.is-charging .power-icon::after { background:var(--amber); box-shadow:5px 0 var(--amber); }
   .battery-wrap { display:flex; align-items:center; gap:4px; color:#455168; font-size:10px; font-variant-numeric:tabular-nums; }
   .battery-icon { position:relative; width:20px; height:10px; padding:1px; border:1.5px solid #59657a; border-radius:3px; }.battery-icon::after { content:""; position:absolute; top:2px; right:-4px; width:2px; height:4px; border-radius:0 2px 2px 0; background:#59657a; }.battery-icon i { display:block; width:78%; height:100%; border-radius:1px; background:#3d7cff; transition:width .2s ease,background .2s ease; }
   .app-grid { --icon-size:54px; --grid-gap:20px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-auto-rows:92px; column-gap:var(--grid-gap); row-gap:22px; padding-top:28px; }
@@ -75,11 +78,10 @@
   updateClock(); setInterval(updateClock, 30000);
 
   const wifiButton = document.querySelector('#wifiButton');
-  const wifiText = document.querySelector('#wifiText');
   let online = false;
-  wifiButton.onclick = () => { online = !online; wifiButton.classList.toggle('is-online', online); wifiText.textContent = online ? '已连接' : '未连接'; wifiButton.setAttribute('aria-label', `WiFi ${wifiText.textContent}`); };
+  wifiButton.onclick = () => { online = !online; wifiButton.classList.toggle('is-online', online); wifiButton.setAttribute('aria-label', online ? 'WiFi 已连接' : 'WiFi 未连接'); };
 
   const powerButton = document.querySelector('#powerButton');
   let charging = false;
-  powerButton.onclick = () => { charging = !charging; powerButton.classList.toggle('is-charging', charging); document.querySelector('#powerIcon').textContent = charging ? 'ϟ' : '▱'; powerButton.setAttribute('aria-label', charging ? '外接电源充电中' : '使用电池供电'); };
+  powerButton.onclick = () => { charging = !charging; powerButton.classList.toggle('is-charging', charging); powerButton.setAttribute('aria-label', charging ? '外接电源充电中' : '使用电池供电'); };
 </script>
