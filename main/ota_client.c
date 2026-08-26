@@ -243,8 +243,10 @@ bool ota_client_update(ota_progress_cb_t cb)
 
     uint8_t buf[8192];
     int total = 0, r;
+    esp_err_t write_err = ESP_OK;
     while ((r = esp_http_client_read(c, (char *)buf, sizeof(buf))) > 0) {
-        esp_ota_write(ota_handle, buf, r);
+        write_err = esp_ota_write(ota_handle, buf, r);
+        if (write_err != ESP_OK) break;
         mbedtls_md5_update(&md5_ctx, buf, r);
         total += r;
         if (cb && content_len > 0)
@@ -252,6 +254,15 @@ bool ota_client_update(ota_progress_cb_t cb)
     }
     esp_http_client_close(c);
     esp_http_client_cleanup(c);
+
+    if (r < 0 || write_err != ESP_OK || (content_len > 0 && total != content_len)) {
+        ESP_LOGE(TAG, "firmware download/write failed read=%d write=%s total=%d expected=%d",
+                 r, esp_err_to_name(write_err), total, content_len);
+        mbedtls_md5_free(&md5_ctx);
+        esp_ota_abort(ota_handle);
+        if (cb) cb(0, "下载失败，已取消更新");
+        return false;
+    }
 
     unsigned char md5_out[16];
     mbedtls_md5_finish(&md5_ctx, md5_out);
@@ -264,7 +275,7 @@ bool ota_client_update(ota_progress_cb_t cb)
 
     if (expect_md5 && strcmp(got_md5, expect_md5) != 0) {
         ESP_LOGE(TAG, "MD5 mismatch! abort update.");
-        esp_ota_end(ota_handle);   // 结束但不置位 boot，保留旧槽
+        esp_ota_abort(ota_handle); // 不置位 boot，保留旧槽
         if (cb) cb(0, "校验失败：文件损坏，已取消更新");
         return false;
     }
