@@ -9,6 +9,8 @@
 #include "esp_http_client.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "cJSON.h"
@@ -57,14 +59,31 @@ void net_cfg_get_url(char *buf, size_t len)
 void net_cfg_get_token(char *buf, size_t len)
 {
     if (!buf || len == 0) return;
-    /* 设备令牌与固定网关配套使用，忽略历史 NVS 中遗留的占位令牌。 */
+    /* 仅保留 ASR 兼容路径；OTA 已不再读取或发送设备令牌。 */
     strlcpy(buf, DEFAULT_AUTH_TOKEN, len);
 }
 
 void net_cfg_set(const char *url, const char *token)
 {
-    (void)url; /* 网关地址固定为 DEFAULT_GATEWAY_URL。 */
+    (void)url;
     if (token && token[0]) nvs_set(NVS_NS_NET, NVS_KEY_TOKEN, token);
+}
+
+void device_uuid_get(char *buf, size_t len)
+{
+    if (!buf || len == 0) return;
+    uint8_t raw[16] = {0};
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_OPTIONAL_UNIQUE_ID, raw, 128);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "read eFuse UUID failed: %s", esp_err_to_name(err));
+        buf[0] = '\0';
+        return;
+    }
+    size_t pos = 0;
+    for (size_t i = 0; i < sizeof(raw) && pos + 2 < len; ++i) {
+        pos += snprintf(buf + pos, len - pos, "%02x", raw[i]);
+    }
+    buf[pos] = '\0';
 }
 
 /* ---------------- 版本比较 ---------------- */
@@ -93,7 +112,7 @@ void ota_get_running_version(char *buf, size_t len)
 
 /* ---------------- HTTP 简单 GET（取文本） ---------------- */
 
-static char *http_get_text(const char *url, const char *token, int *http_code)
+static char *http_get_text(const char *url, int *http_code)
 {
     esp_http_client_config_t cfg = {
         .url = url,
@@ -103,7 +122,6 @@ static char *http_get_text(const char *url, const char *token, int *http_code)
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t c = esp_http_client_init(&cfg);
-    esp_http_client_set_header(c, "X-Auth-Token", token);
     esp_err_t err = esp_http_client_open(c, 0);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "http open failed: %s", esp_err_to_name(err));
@@ -132,16 +150,15 @@ static char *http_get_text(const char *url, const char *token, int *http_code)
 
 bool ota_client_check(void)
 {
-    char url[128], token[128], ver[32];
+    char url[128], ver[32];
     net_cfg_get_url(url, sizeof(url));
-    net_cfg_get_token(token, sizeof(token));
     get_running_version(ver, sizeof(ver));
 
     char req[192];
     snprintf(req, sizeof(req), "%s%s?current=%s", url, OTA_VERSION_PATH, ver);
 
     int code = 0;
-    char *body = http_get_text(req, token, &code);
+    char *body = http_get_text(req, &code);
     if (!body || code != 200) {
         ESP_LOGW(TAG, "version check failed code=%d", code);
         free(body);
@@ -190,9 +207,8 @@ bool ota_client_update(ota_progress_cb_t cb)
 {
     if (!g_ota_update_available) return false;
 
-    char url[128], token[128];
+    char url[128];
     net_cfg_get_url(url, sizeof(url));
-    net_cfg_get_token(token, sizeof(token));
     char fw_url[192];
     snprintf(fw_url, sizeof(fw_url), "%s%s", url, OTA_FIRMWARE_PATH);
 
@@ -204,7 +220,6 @@ bool ota_client_update(ota_progress_cb_t cb)
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t c = esp_http_client_init(&cfg);
-    esp_http_client_set_header(c, "X-Auth-Token", token);
     if (esp_http_client_open(c, 0) != ESP_OK) {
         ESP_LOGE(TAG, "open firmware failed");
         esp_http_client_cleanup(c);

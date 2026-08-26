@@ -283,6 +283,12 @@ static void device_info_screen(void)
     set_cn_font(name);
     lv_obj_t *model = lv_label_create(content);
     lv_label_set_text(model, "ESP32-S3 ES3C28P");
+    char uuid[33];
+    device_uuid_get(uuid, sizeof(uuid));
+    lv_obj_t *uuid_label = lv_label_create(content);
+    lv_label_set_text_fmt(uuid_label, "UUID: %s", uuid[0] ? uuid : "读取失败");
+    lv_obj_set_width(uuid_label, LV_PCT(100));
+    set_cn_font(uuid_label);
     lv_obj_t *ip = lv_label_create(content);
     const char *device_ip = wifi_mgr_ip();
     if (wifi_mgr_state() == WIFI_ST_CONNECTED && device_ip && device_ip[0]) {

@@ -17,8 +17,10 @@
 #define NVS_KEY_TOKEN      "token"
 #define NVS_KEY_FW_VER     "fw_ver"
 
-/* 固定公网网关：不从 NVS 读取，也不向用户提供修改入口。 */
+/* 固定公网网关：不从 NVS 读取，也不向用户提供修改入口。
+ * OTA 分发接口当前以免认证模式调试；ASR 鉴权后续单独设计。 */
 #define DEFAULT_GATEWAY_URL "https://esp.luoe.cn"
+/* 仅兼容现有 ASR 调用；OTA 请求不再读取或发送此值。 */
 #define DEFAULT_AUTH_TOKEN  "fb6435a2346f5ec0fd36b660b81b513eda56ddb0833829173636fd283dad2827"
 
 /* OTA 分发接口路径（挂在网关 18080 下） */
@@ -39,7 +41,8 @@ void ui_show_toast(const char *msg);
 void voice_app_open(void);
 void system_app_open(void);
 
-/* 读取已保存的网关地址 / 令牌（NVS，缺省用出厂默认） */
+/* 固定网关地址、ASR 兼容令牌及芯片 eFuse 中的原始 128-bit UUID。 */
 void net_cfg_get_url(char *buf, size_t len);
 void net_cfg_get_token(char *buf, size_t len);
 void net_cfg_set(const char *url, const char *token);
+void device_uuid_get(char *buf, size_t len);
