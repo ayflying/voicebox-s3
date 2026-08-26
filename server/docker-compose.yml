@@ -12,15 +12,19 @@
 
 services:
   gateway:
-    image: ghcr.io/ayflying/voicebox-s3-gateway:latest
-    pull_policy: always
+    # 本机构建 Wyoming 适配网关；显式版本标签，避免 compose 拉取 latest。
+    build:
+      context: ./gateway
+    image: voicebox-s3-gateway:wyoming-v1
+    pull_policy: never
     ports:
       - "18080:18080"
     environment:
       - GATEWAY_PORT=18080
       - AUTH_TOKEN=${AUTH_TOKEN:-changeme-device-token}
       - ADMIN_TOKEN=${ADMIN_TOKEN:-changeme-admin-token}
-      - UPSTREAM_ASR=http://asr:9000
+      # Wyoming 协议的 Faster-Whisper 内网地址。
+      - UPSTREAM_ASR=asr:10300
       - FIRMWARE_DIR=/firmware
     volumes:
       - ota_storage:/firmware
@@ -29,20 +33,21 @@ services:
     restart: unless-stopped
 
   asr:
-    # 固定为已验证的镜像摘要，避免 compose pull 因 latest 重新拉取 ASR 镜像。
-    # 升级 ASR 时需显式更新该摘要并完成转写回归验证。
-    image: hwdsl2/whisper-server@sha256:166a8c04e2687608a116372e92f11bfda3e963f3c1dbf390a7c820db0f45887b
+    # LinuxServer Faster-Whisper：固定已验证 digest，不使用 latest，避免无谓重拉。
+    # 服务使用 Wyoming TCP 协议，仅在 Compose 内网开放 10300。
+    image: lscr.io/linuxserver/faster-whisper@sha256:9c0d993fd31a3db8ef83002a114cec9e43c6348dc7098770540444ff0cc562b1
     pull_policy: missing
     environment:
-      - WHISPER_MODEL=${WHISPER_MODEL:-base}
-      - WHISPER_LANGUAGE=zh
-      - WHISPER_DEVICE=cpu
-      - WHISPER_COMPUTE_TYPE=int8
-      - WHISPER_THREADS=${WHISPER_THREADS:-4}
+      - PUID=0
+      - PGID=0
+      - TZ=Asia/Shanghai
+      - WHISPER_MODEL=${WHISPER_MODEL:-base-int8}
+      - WHISPER_LANG=zh
+      - WHISPER_BEAM=1
     volumes:
-      # 首次下载的模型持久化，后续容器重建不重复下载。
-      - whisper_models:/var/lib/whisper
-    # 注意：此处【不写 ports】，Whisper 只对同 compose 网络的 gateway 暴露 9000
+      # 模型与运行配置持久化，重建容器不会重复下载。
+      - whisper_models:/config
+    # 注意：此处【不写 ports】，Whisper 只对同 Compose 网络的 gateway 暴露 10300。
     restart: unless-stopped
     deploy:
       resources:

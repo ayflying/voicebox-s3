@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bytes"
+	"bufio"
 	"context"
 	"crypto/md5"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
-	"mime/multipart"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -35,7 +35,7 @@ var versionRe = regexp.MustCompile(`^\d+\.\d+\.\d+$`)
 func main() {
 	authToken = envDefault("AUTH_TOKEN", "changeme-device-token")
 	adminToken = envDefault("ADMIN_TOKEN", "changeme-admin-token")
-	upstreamASR = envDefault("UPSTREAM_ASR", "http://asr:9000")
+	upstreamASR = envDefault("UPSTREAM_ASR", "asr:10300")
 	firmwareDir = envDefault("FIRMWARE_DIR", "/firmware")
 	listenPort = atoiDefault(os.Getenv("GATEWAY_PORT"), 18080)
 
@@ -104,7 +104,18 @@ func adminMiddleware(r *ghttp.Request) {
 	r.Middleware.Next()
 }
 
-// ---------- /transcribe：将设备裸 PCM 封装为 WAV，再调用现成 Whisper HTTP API ----------
+// ---------- /transcribe：将设备 16kHz/16bit/单声道 PCM 转发到 Wyoming Faster-Whisper ----------
+
+type wyomingEvent struct {
+	Type          string          `json:"type"`
+	Data          json.RawMessage `json:"data,omitempty"`
+	DataLength    int             `json:"data_length,omitempty"`
+	PayloadLength int             `json:"payload_length,omitempty"`
+}
+
+type wyomingTranscript struct {
+	Text string `json:"text"`
+}
 
 func transcribeHandler(r *ghttp.Request) {
 	pcm := r.GetBody()
@@ -113,71 +124,116 @@ func transcribeHandler(r *ghttp.Request) {
 		return
 	}
 
-	var payload bytes.Buffer
-	writer := multipart.NewWriter(&payload)
-	file, err := writer.CreateFormFile("file", "voice.wav")
+	text, err := transcribeWyoming(r.Context(), pcm)
 	if err != nil {
-		r.Response.WriteStatusExit(http.StatusInternalServerError, g.Map{"error": "create audio form failed"})
+		g.Log().Warningf(r.Context(), "Wyoming transcribe failed: %v", err)
+		r.Response.WriteStatusExit(http.StatusBadGateway, g.Map{"error": "asr unavailable"})
 		return
 	}
-	if _, err = file.Write(pcmToWav(pcm)); err != nil {
-		r.Response.WriteStatusExit(http.StatusInternalServerError, g.Map{"error": "encode wav failed"})
-		return
-	}
-	_ = writer.WriteField("model", "whisper-1")
-	_ = writer.WriteField("language", "zh")
-	if err = writer.Close(); err != nil {
-		r.Response.WriteStatusExit(http.StatusInternalServerError, g.Map{"error": "close audio form failed"})
-		return
-	}
-
-	req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamASR+"/v1/audio/transcriptions", &payload)
-	if err != nil {
-		r.Response.WriteStatusExit(http.StatusInternalServerError, g.Map{"error": "build upstream request failed"})
-		return
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		r.Response.WriteStatusExit(http.StatusBadGateway, g.Map{"error": "upstream error: " + err.Error()})
-		return
-	}
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		r.Response.WriteStatusExit(http.StatusBadGateway, g.Map{"error": "read upstream response failed"})
-		return
-	}
-	if resp.StatusCode != http.StatusOK {
-		r.Response.WriteStatusExit(http.StatusBadGateway, g.Map{"error": "upstream status " + strconv.Itoa(resp.StatusCode)})
-		return
-	}
-	r.Response.Header().Set("Content-Type", "application/json")
-	r.Response.Write(data)
+	r.Response.WriteJson(g.Map{"text": text})
 }
 
-// pcmToWav 将 ESP32 上传的 16 kHz、16 bit、单声道 little-endian PCM 封装为标准 WAV。
-func pcmToWav(pcm []byte) []byte {
-	const sampleRate uint32 = 16000
-	const channels uint16 = 1
-	const bitsPerSample uint16 = 16
-	byteRate := sampleRate * uint32(channels) * uint32(bitsPerSample) / 8
-	blockAlign := channels * bitsPerSample / 8
-	out := make([]byte, 44+len(pcm))
-	copy(out[0:4], "RIFF")
-	binary.LittleEndian.PutUint32(out[4:8], uint32(36+len(pcm)))
-	copy(out[8:12], "WAVEfmt ")
-	binary.LittleEndian.PutUint32(out[16:20], 16)
-	binary.LittleEndian.PutUint16(out[20:22], 1)
-	binary.LittleEndian.PutUint16(out[22:24], channels)
-	binary.LittleEndian.PutUint32(out[24:28], sampleRate)
-	binary.LittleEndian.PutUint32(out[28:32], byteRate)
-	binary.LittleEndian.PutUint16(out[32:34], blockAlign)
-	binary.LittleEndian.PutUint16(out[34:36], bitsPerSample)
-	copy(out[36:40], "data")
-	binary.LittleEndian.PutUint32(out[40:44], uint32(len(pcm)))
-	copy(out[44:], pcm)
-	return out
+func transcribeWyoming(ctx context.Context, pcm []byte) (string, error) {
+	dialer := net.Dialer{Timeout: 5 * time.Second}
+	conn, err := dialer.DialContext(ctx, "tcp", upstreamASR)
+	if err != nil {
+		return "", fmt.Errorf("dial %s: %w", upstreamASR, err)
+	}
+	defer conn.Close()
+	if deadline, ok := ctx.Deadline(); ok {
+		_ = conn.SetDeadline(deadline)
+	} else {
+		_ = conn.SetDeadline(time.Now().Add(45 * time.Second))
+	}
+
+	writer := bufio.NewWriter(conn)
+	// Wyoming ASR 流顺序：transcribe -> audio-start -> 若干 audio-chunk -> audio-stop。
+	if err := writeWyomingEvent(writer, wyomingEvent{Type: "transcribe", Data: json.RawMessage(`{"language":"zh"}`)}, nil); err != nil {
+		return "", err
+	}
+	format := json.RawMessage(`{"rate":16000,"width":2,"channels":1}`)
+	if err := writeWyomingEvent(writer, wyomingEvent{Type: "audio-start", Data: format}, nil); err != nil {
+		return "", err
+	}
+	const chunkSize = 3200 // 100 ms PCM：16000 Hz * 2 bytes
+	for start := 0; start < len(pcm); start += chunkSize {
+		end := start + chunkSize
+		if end > len(pcm) {
+			end = len(pcm)
+		}
+		if err := writeWyomingEvent(writer, wyomingEvent{Type: "audio-chunk", Data: format}, pcm[start:end]); err != nil {
+			return "", err
+		}
+	}
+	if err := writeWyomingEvent(writer, wyomingEvent{Type: "audio-stop"}, nil); err != nil {
+		return "", err
+	}
+	if err := writer.Flush(); err != nil {
+		return "", err
+	}
+
+	reader := bufio.NewReader(conn)
+	for {
+		event, err := readWyomingEvent(reader)
+		if err != nil {
+			return "", err
+		}
+		switch event.Type {
+		case "transcript":
+			var transcript wyomingTranscript
+			if err := json.Unmarshal(event.Data, &transcript); err != nil {
+				return "", fmt.Errorf("decode transcript: %w", err)
+			}
+			return transcript.Text, nil
+		case "error":
+			return "", fmt.Errorf("upstream error: %s", string(event.Data))
+		}
+	}
+}
+
+func writeWyomingEvent(w *bufio.Writer, event wyomingEvent, payload []byte) error {
+	event.PayloadLength = len(payload)
+	header, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+	if _, err = w.Write(header); err != nil {
+		return err
+	}
+	if err = w.WriteByte('\n'); err != nil {
+		return err
+	}
+	if len(payload) > 0 {
+		_, err = w.Write(payload)
+	}
+	return err
+}
+
+func readWyomingEvent(r *bufio.Reader) (wyomingEvent, error) {
+	line, err := r.ReadBytes('\n')
+	if err != nil {
+		return wyomingEvent{}, err
+	}
+	var event wyomingEvent
+	if err = json.Unmarshal(line, &event); err != nil {
+		return wyomingEvent{}, fmt.Errorf("decode Wyoming header: %w", err)
+	}
+	if event.DataLength < 0 || event.DataLength > 64*1024 || event.PayloadLength < 0 || event.PayloadLength > 1024*1024 {
+		return wyomingEvent{}, fmt.Errorf("invalid Wyoming frame lengths data=%d payload=%d", event.DataLength, event.PayloadLength)
+	}
+	// Python Wyoming 参考实现将 data 作为 header 之后的独立 JSON 段发送。
+	if event.DataLength > 0 {
+		event.Data = make([]byte, event.DataLength)
+		if _, err = io.ReadFull(r, event.Data); err != nil {
+			return wyomingEvent{}, err
+		}
+	}
+	if event.PayloadLength > 0 {
+		if _, err = io.CopyN(io.Discard, r, int64(event.PayloadLength)); err != nil {
+			return wyomingEvent{}, err
+		}
+	}
+	return event, nil
 }
 
 // ---------- OTA：版本查询 ----------
