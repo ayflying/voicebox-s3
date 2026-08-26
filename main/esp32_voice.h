@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 /* 当前固件版本（OTA 校验/红点比对用） */
-#define APP_VERSION        "1.0.0"
+#define APP_VERSION        "1.0.1"
 
 /* NVS 命名空间与键 */
 #define NVS_NS_WIFI        "wifi"
