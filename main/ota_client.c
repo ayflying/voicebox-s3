@@ -13,6 +13,7 @@
 #include "nvs.h"
 #include "cJSON.h"
 #include "mbedtls/md5.h"
+#include "esp_crt_bundle.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -48,8 +49,9 @@ static void nvs_set(const char *ns, const char *key, const char *val)
 
 void net_cfg_get_url(char *buf, size_t len)
 {
-    nvs_get(NVS_NS_NET, NVS_KEY_GW_URL, buf, len);
-    if (buf[0] == '\0') strncpy(buf, DEFAULT_GATEWAY_URL, len - 1);
+    if (!buf || len == 0) return;
+    /* 网关域名由固件固定，忽略历史 NVS 中的可编辑地址。 */
+    strlcpy(buf, DEFAULT_GATEWAY_URL, len);
 }
 
 void net_cfg_get_token(char *buf, size_t len)
@@ -60,7 +62,7 @@ void net_cfg_get_token(char *buf, size_t len)
 
 void net_cfg_set(const char *url, const char *token)
 {
-    if (url && url[0]) nvs_set(NVS_NS_NET, NVS_KEY_GW_URL, url);
+    (void)url; /* 网关地址固定为 DEFAULT_GATEWAY_URL。 */
     if (token && token[0]) nvs_set(NVS_NS_NET, NVS_KEY_TOKEN, token);
 }
 
@@ -97,12 +99,19 @@ static char *http_get_text(const char *url, const char *token, int *http_code)
         .method = HTTP_METHOD_GET,
         .timeout_ms = 15000,
         .buffer_size = 2048,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t c = esp_http_client_init(&cfg);
     esp_http_client_set_header(c, "X-Auth-Token", token);
-    esp_http_client_open(c, 0);
-    int code = esp_http_client_fetch_headers(c);
-    if (http_code) *http_code = code;
+    esp_err_t err = esp_http_client_open(c, 0);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "http open failed: %s", esp_err_to_name(err));
+        if (http_code) *http_code = 0;
+        esp_http_client_cleanup(c);
+        return NULL;
+    }
+    esp_http_client_fetch_headers(c);
+    if (http_code) *http_code = esp_http_client_get_status_code(c);
     int len = esp_http_client_get_content_length(c);
     if (len <= 0) len = 4096;
     char *buf = malloc(len + 1);
@@ -191,6 +200,7 @@ bool ota_client_update(ota_progress_cb_t cb)
         .method = HTTP_METHOD_GET,
         .timeout_ms = 120000,
         .buffer_size = 8192,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t c = esp_http_client_init(&cfg);
     esp_http_client_set_header(c, "X-Auth-Token", token);

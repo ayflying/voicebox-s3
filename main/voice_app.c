@@ -11,6 +11,7 @@
 #include "lvgl.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
+#include "esp_crt_bundle.h"
 #include "cJSON.h"
 #include "esp_codec_dev.h"
 #include "freertos/FreeRTOS.h"
@@ -85,6 +86,7 @@ static char *transcribe(uint8_t *pcm, size_t len)
         .method = HTTP_METHOD_POST,
         .timeout_ms = 20000,
         .buffer_size = 4096,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t c = esp_http_client_init(&cfg);
     esp_http_client_set_header(c, "X-Auth-Token", token);

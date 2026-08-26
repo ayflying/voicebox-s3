@@ -17,8 +17,8 @@
 #define NVS_KEY_TOKEN      "token"
 #define NVS_KEY_FW_VER     "fw_ver"
 
-/* 出厂默认（系统设置可改，存 NVS 后覆盖） */
-#define DEFAULT_GATEWAY_URL "http://192.168.1.100:18080"
+/* 固定公网网关：不从 NVS 读取，也不向用户提供修改入口。 */
+#define DEFAULT_GATEWAY_URL "https://esp.luoe.cn"
 #define DEFAULT_AUTH_TOKEN  "changeme-device-token"
 
 /* OTA 分发接口路径（挂在网关 18080 下） */

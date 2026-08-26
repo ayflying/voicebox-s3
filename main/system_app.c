@@ -14,7 +14,6 @@ static lv_obj_t *g_kb = NULL;
 static lv_obj_t *g_wifi_list = NULL;
 static lv_timer_t *g_scan_poll_timer = NULL;
 static char      g_sel_ssid[33] = "";
-static lv_obj_t *g_gw_tas[2] = {NULL, NULL};   /* [0]=url [1]=token */
 static lv_obj_t *g_ver_reddot = NULL;
 
 static void on_back_click(lv_event_t *e)
@@ -86,49 +85,6 @@ static void show_keyboard(lv_event_t *e)
     }
     lv_keyboard_set_textarea(g_kb, ta);
     lv_obj_clear_flag(g_kb, LV_OBJ_FLAG_HIDDEN);
-}
-
-/* ---------------- 网关配置 ---------------- */
-static void gw_save_cb(lv_event_t *e)
-{
-    lv_obj_t **tas = (lv_obj_t **)lv_event_get_user_data(e);
-    net_cfg_set(lv_textarea_get_text(tas[0]), lv_textarea_get_text(tas[1]));
-    ui_show_toast("已保存");
-}
-
-static void gateway_screen(void)
-{
-    lv_obj_t *scr = new_screen("网关配置");
-
-    lv_obj_t *ul = lv_label_create(scr);
-    lv_label_set_text(ul, "网关地址");
-    lv_obj_t *uta = lv_textarea_create(scr);
-    char url[128] = "";
-    net_cfg_get_url(url, sizeof(url));
-    lv_textarea_set_text(uta, url);
-    lv_obj_set_width(uta, LV_PCT(100));
-    lv_obj_add_event_cb(uta, show_keyboard, LV_EVENT_FOCUSED, NULL);
-
-    lv_obj_t *tl = lv_label_create(scr);
-    lv_label_set_text(tl, "Auth Token");
-    lv_obj_t *tta = lv_textarea_create(scr);
-    char token[128] = "";
-    net_cfg_get_token(token, sizeof(token));
-    lv_textarea_set_text(tta, token);
-    lv_obj_set_width(tta, LV_PCT(100));
-    lv_obj_add_event_cb(tta, show_keyboard, LV_EVENT_FOCUSED, NULL);
-
-    g_gw_tas[0] = uta;
-    g_gw_tas[1] = tta;
-
-    lv_obj_t *save = lv_button_create(scr);
-    lv_obj_set_size(save, LV_PCT(100), 44);
-    lv_obj_t *sl = lv_label_create(save);
-    lv_label_set_text(sl, "保存");
-    lv_obj_center(sl);
-    lv_obj_add_event_cb(save, gw_save_cb, LV_EVENT_CLICKED, g_gw_tas);
-
-    lv_screen_load(scr);
 }
 
 /* ---------------- 版本信息 ---------------- */
@@ -277,7 +233,6 @@ static void wifi_screen(void)
 
 /* ---------------- 系统设置主界面 ---------------- */
 static void on_wifi_open(lv_event_t *e)  { (void)e; wifi_screen(); }
-static void on_gw_open(lv_event_t *e)    { (void)e; gateway_screen(); }
 static void on_ver_open(lv_event_t *e)   { (void)e; version_screen(); }
 
 void system_app_open(void)
@@ -299,13 +254,6 @@ void system_app_open(void)
     lv_label_set_text(wl, "WiFi");
     lv_obj_center(wl);
     lv_obj_add_event_cb(wifi_btn, on_wifi_open, LV_EVENT_CLICKED, NULL);
-
-    lv_obj_t *gw_btn = lv_button_create(scr);
-    lv_obj_set_size(gw_btn, LV_PCT(100), 50);
-    lv_obj_t *gl = lv_label_create(gw_btn);
-    lv_label_set_text(gl, "网关配置");
-    lv_obj_center(gl);
-    lv_obj_add_event_cb(gw_btn, on_gw_open, LV_EVENT_CLICKED, NULL);
 
     lv_obj_t *ver_btn = lv_button_create(scr);
     lv_obj_set_size(ver_btn, LV_PCT(100), 50);
