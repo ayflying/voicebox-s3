@@ -52,8 +52,20 @@ func main() {
 		group.Middleware(authMiddleware)
 		group.POST("/transcribe", transcribeHandler)
 	})
-	s.GET("/api/ota/version", versionHandler)
-	s.GET("/api/ota/firmware", firmwareHandler)
+	s.BindHandler("/api/ota/version", func(r *ghttp.Request) {
+		if r.Method != "GET" {
+			r.Response.WriteStatus(http.StatusMethodNotAllowed)
+			return
+		}
+		versionHandler(r)
+	})
+	s.BindHandler("/api/ota/firmware", func(r *ghttp.Request) {
+		if r.Method != "GET" {
+			r.Response.WriteStatus(http.StatusMethodNotAllowed)
+			return
+		}
+		firmwareHandler(r)
+	})
 
 	// 管理员接口（需 X-Admin-Token，独立令牌）
 	s.Group("/api/admin", func(group *ghttp.RouterGroup) {
