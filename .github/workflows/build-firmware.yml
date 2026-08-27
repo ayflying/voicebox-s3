@@ -1,0 +1,54 @@
+name: 编译 ESP32 固件
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "main/**"
+      - "components/**"
+      - "assets/**"
+      - "partitions.csv"
+      - "sdkconfig.defaults"
+      - "CMakeLists.txt"
+      - "idf_component.yml"
+      - ".github/workflows/build-firmware.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-firmware-main
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 远程编译 ESP32-S3
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v5.5
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 编译固件
+        shell: bash
+        run: |
+          . /opt/esp/idf/export.sh
+          idf.py set-target esp32s3
+          idf.py build
+
+      - name: 上传固件产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32-s3-firmware-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            build/esp32_voice.bin
+            build/bootloader/bootloader.bin
+            build/partition_table/partition-table.bin
+            build/ota_data_initial.bin
+            build/project_description.json
+            build/flasher_args.json
