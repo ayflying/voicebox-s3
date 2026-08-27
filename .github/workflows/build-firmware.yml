@@ -29,8 +29,10 @@ jobs:
     container:
       image: espressif/idf:release-v5.5
     steps:
-      - name: 检出代码
+      - name: 检出代码及 BSP 子模块
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: 编译固件
         shell: bash
